@@ -13,7 +13,7 @@
         "headers": [
           {
             "key": "Content-Security-Policy",
-            "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' https://image.tmdb.org data:; connect-src 'self' https://api.themoviedb.org https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://vidsrc.me https://embed.su https://dl.vidsrc.me https://fzmovies.cms https://vegamovies.pet https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'"
+            "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' https://image.tmdb.org data:; connect-src 'self' https://api.themoviedb.org https://*.googleapis.com https://*.firebaseio.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com; frame-src https://vidsrc.me https://vidsrc.cc https://embed.su https://vidlink.pro https://www.2embed.cc https://player.autoembed.cc https://moviesapi.club https://dl.vidsrc.me https://www.youtube.com https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'"
           },
           { "key": "X-Content-Type-Options", "value": "nosniff" },
           { "key": "Referrer-Policy", "value": "no-referrer" }

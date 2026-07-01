@@ -74,6 +74,30 @@ export const getTop10SeriesPH = () =>
     'vote_count.gte': 20,
   }).then((d) => (d.results ?? []).filter((r) => r.poster_path).slice(0, 10))
 
+// ---- Filipino / Pinoy content (origin country PH) ---------------------------
+// Actual Philippine-produced titles (Star Cinema, Regal, GMA, etc.), by TMDB
+// origin country, sorted by popularity. Returns items with posters.
+export const getFilipinoMovies = (page = 1) =>
+  get('/discover/movie', {
+    with_origin_country: 'PH',
+    sort_by: 'popularity.desc',
+    page,
+  }).then((d) => (d.results ?? []).filter((r) => r.poster_path))
+
+export const getFilipinoSeries = (page = 1) =>
+  get('/discover/tv', {
+    with_origin_country: 'PH',
+    sort_by: 'popularity.desc',
+    page,
+  }).then((d) => (d.results ?? []).filter((r) => r.poster_path))
+
+// Full page objects (for genre pages / infinite scroll if needed later).
+export const getFilipinoMoviesPage = (page = 1) =>
+  get('/discover/movie', { with_origin_country: 'PH', sort_by: 'popularity.desc', page })
+
+export const getFilipinoSeriesPage = (page = 1) =>
+  get('/discover/tv', { with_origin_country: 'PH', sort_by: 'popularity.desc', page })
+
 // ---- Details ----------------------------------------------------------------
 export const getMovieDetails = (id) =>
   get(`/movie/${id}`, { append_to_response: 'credits,videos' })

@@ -9,6 +9,8 @@ import {
   getTopRated,
   getTop10MoviesPH,
   getTop10SeriesPH,
+  getFilipinoMovies,
+  getFilipinoSeries,
 } from '../lib/tmdb'
 
 function useRow(key, fn) {
@@ -22,6 +24,8 @@ export default function Home() {
   const topRated = useRow('top-rated', getTopRated)
   const top10Movies = useRow('top10-movies-ph', getTop10MoviesPH)
   const top10Series = useRow('top10-series-ph', getTop10SeriesPH)
+  const pinoyMovies = useRow('filipino-movies', getFilipinoMovies)
+  const pinoySeries = useRow('filipino-series', getFilipinoSeries)
 
   const hero = trending.data?.find((t) => t.backdrop_path) ?? trending.data?.[0]
 
@@ -49,6 +53,19 @@ export default function Home() {
           items={top10Series.data}
           loading={top10Series.isLoading}
           error={top10Series.isError}
+        />
+
+        <ContentRow
+          title="🇵🇭 Filipino Movies"
+          items={pinoyMovies.data}
+          loading={pinoyMovies.isLoading}
+          error={pinoyMovies.isError}
+        />
+        <ContentRow
+          title="🇵🇭 Pinoy Series"
+          items={pinoySeries.data}
+          loading={pinoySeries.isLoading}
+          error={pinoySeries.isError}
         />
 
         <ContentRow
