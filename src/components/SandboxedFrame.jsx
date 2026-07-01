@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 /**
- * Strictly sandboxed iframe used for both the video player and the download page.
+ * Sandboxed iframe used for both the video player and the download page.
  *
  * Security model (the important part):
  *  - sandbox="allow-scripts allow-same-origin" DELIBERATELY omits allow-popups,
@@ -14,6 +14,15 @@ import { useEffect, useRef, useState } from 'react'
  *  - CSP frame-src (set via Firebase Hosting headers) is a SEPARATE control that
  *    limits which domains this page may frame — it does not stop child popups.
  */
+
+// ⚠️ TEMPORARY TEST MODE — SANDBOX DISABLED ⚠️
+// While this is `false`, the iframe sandbox is REMOVED, so embeds can open
+// pop-ups/pop-unders, submit forms, and redirect the page freely — i.e. behave
+// exactly like visiting the piracy site directly, ads and all. This turns OFF
+// the anti-pop-up / anti-redirect / anti-phishing protection and exposes you to
+// malvertising redirects. Set back to `true` when you're done testing.
+const STRICT_SANDBOX = false
+
 export default function SandboxedFrame({ src, title, timeoutMs = 8000 }) {
   const [loaded, setLoaded] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
@@ -58,9 +67,11 @@ export default function SandboxedFrame({ src, title, timeoutMs = 8000 }) {
           title={title}
           onLoad={onLoad}
           className="h-full w-full border-0"
-          sandbox="allow-scripts allow-same-origin"
           referrerPolicy="no-referrer"
           allowFullScreen
+          // When STRICT_SANDBOX is false, the sandbox attribute is omitted
+          // entirely → the embed runs fully unrestricted.
+          {...(STRICT_SANDBOX ? { sandbox: 'allow-scripts allow-same-origin' } : {})}
         />
       )}
     </div>
