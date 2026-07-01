@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    match /users/{uid} {
+      // Users read their own doc; admins read any doc. No public read.
+      allow read: if isSelf(uid) || isAdmin();
+
+      // Registration: own doc only, with forced safe defaults.
+      // A user can NEVER create themselves as approved or as admin.
+      allow create: if isSelf(uid)
+        && request.resource.data.role == "user"
+        && request.resource.data.status == "pending";
+
+      // Self edit: profile fields only. role & status must remain UNCHANGED,
+      // which is what prevents self-approval / self-promotion to admin.
+      allow update: if isSelf(uid)
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.status == resource.data.status;
+
+      // Admins may change status/role and delete user docs.
+      allow update, delete: if isAdmin();
+    }
+
+    // Everything else is denied by default.
+  }
+}

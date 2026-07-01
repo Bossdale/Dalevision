@@ -1,0 +1,63 @@
+import { Routes, Route } from 'react-router-dom'
+
+import Layout from './components/Layout'
+import PrivateRoute from './components/PrivateRoute'
+import ApprovedRoute from './components/ApprovedRoute'
+import AdminRoute from './components/AdminRoute'
+
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Pending from './pages/Pending'
+import Banned from './pages/Banned'
+import Home from './pages/Home'
+import Movies from './pages/Movies'
+import Series from './pages/Series'
+import Search from './pages/Search'
+import Detail from './pages/Detail'
+import Watch from './pages/Watch'
+import Download from './pages/Download'
+import Profile from './pages/Profile'
+import Admin from './pages/Admin'
+import NotFound from './pages/NotFound'
+
+export default function App() {
+  return (
+    <Routes>
+      {/* Public */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
+      {/* Signed-in (any status) */}
+      <Route element={<PrivateRoute />}>
+        <Route path="/pending" element={<Pending />} />
+        <Route path="/banned" element={<Banned />} />
+
+        {/* Approved users only */}
+        <Route element={<ApprovedRoute />}>
+          {/* Chrome-free full-screen player/download pages */}
+          <Route path="/watch/:type/:id" element={<Watch />} />
+          <Route path="/watch/:type/:id/:season/:episode" element={<Watch />} />
+          <Route path="/download/:type/:id" element={<Download />} />
+
+          {/* Pages with the persistent navbar layout */}
+          <Route element={<Layout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/movies" element={<Movies />} />
+            <Route path="/series" element={<Series />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/detail/:type/:id" element={<Detail />} />
+            <Route path="/profile" element={<Profile />} />
+          </Route>
+
+          {/* Admin only */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<Admin />} />
+          </Route>
+        </Route>
+      </Route>
+
+      {/* Catch-all */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  )
+}

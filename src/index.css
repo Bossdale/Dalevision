@@ -1,0 +1,115 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+  body {
+    @apply text-white antialiased;
+    font-family: Poppins, system-ui, 'Segoe UI', sans-serif;
+    background-color: #0a0a0f;
+    background-image:
+      radial-gradient(1200px 600px at 50% -12%, rgba(229, 9, 20, 0.18), transparent 60%),
+      linear-gradient(180deg, #0a0a0f 0%, #141414 55%, #0f0f13 100%);
+    background-attachment: fixed;
+  }
+
+  /* Cinematic condensed display face for headings/logo/rank numbers */
+  h1,
+  .font-display {
+    letter-spacing: 0.02em;
+  }
+
+  /* Nicer page scrollbar */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+}
+
+@layer components {
+  /* --- Glassmorphism --- */
+  .glass {
+    @apply border border-white/10 bg-white/5 backdrop-blur-xl;
+  }
+  .glass-strong {
+    @apply border border-white/15 bg-white/10 backdrop-blur-2xl;
+  }
+  .glass-card {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  /* --- Buttons --- */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-6 py-2.5 font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0;
+    background-image: linear-gradient(135deg, #e50914 0%, #b20710 100%);
+    box-shadow: 0 8px 30px rgba(229, 9, 20, 0.35);
+  }
+  .btn-primary:hover {
+    box-shadow: 0 10px 40px rgba(229, 9, 20, 0.5);
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-2.5 font-semibold text-white backdrop-blur-md transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/20 active:translate-y-0 disabled:opacity-60;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm text-gray-200 transition-colors hover:bg-white/10;
+  }
+
+  /* --- Inputs --- */
+  .input {
+    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-400 outline-none backdrop-blur-md transition focus:border-accent/60 focus:ring-2 focus:ring-accent/40;
+  }
+  .select-glass {
+    @apply rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-gray-200 outline-none backdrop-blur-md transition focus:border-accent/60;
+  }
+  /* Native dropdown options render on the OS background (usually white), so
+     force a dark background + readable white text for every option. */
+  .select-glass option,
+  select option {
+    background-color: #1a1a20;
+    color: #ffffff;
+  }
+
+  /* --- Section heading with accent bar --- */
+  .section-title {
+    @apply relative flex items-center gap-2 pl-4 text-lg font-semibold text-white sm:text-xl;
+  }
+  .section-title::before {
+    content: '';
+    @apply absolute left-0 h-5 w-1 rounded-full;
+    background-image: linear-gradient(180deg, #e50914, #b20710);
+  }
+
+  /* Chip / pill */
+  .chip {
+    @apply rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-gray-200 backdrop-blur-md;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .text-shadow {
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7);
+  }
+}
