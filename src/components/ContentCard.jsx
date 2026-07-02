@@ -11,10 +11,10 @@ export default function ContentCard({ item }) {
   return (
     <Link
       to={`/detail/${type}/${item.id}`}
-      className="group relative block w-28 shrink-0 sm:w-36"
+      className="group/card relative block w-28 shrink-0 sm:w-36"
       title={title}
     >
-      <div className="relative overflow-hidden rounded-xl bg-surface shadow-card ring-1 ring-white/10 transition-all duration-300 group-hover:z-10 group-hover:scale-105 group-hover:ring-accent/60">
+      <div className="relative overflow-hidden rounded-xl bg-surface shadow-card ring-1 ring-white/10 transition-all duration-300 group-hover/card:z-10 group-hover/card:scale-105 group-hover/card:ring-accent/60">
         {poster ? (
           <img
             src={poster}
@@ -32,7 +32,7 @@ export default function ContentCard({ item }) {
             ★ {rating}
           </span>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2 opacity-0 transition-opacity group-hover:opacity-100">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-2 opacity-0 transition-opacity group-hover/card:opacity-100">
           <p className="line-clamp-2 text-xs font-medium text-white">{title}</p>
           <p className="text-[10px] text-gray-400">
             {type === 'tv' ? 'Series' : 'Movie'}

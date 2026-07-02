@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import Hero from '../components/Hero'
+import HeroCarousel from '../components/HeroCarousel'
 import ContentRow from '../components/ContentRow'
 import Top10Row from '../components/Top10Row'
 import {
@@ -27,11 +27,13 @@ export default function Home() {
   const pinoyMovies = useRow('filipino-movies', getFilipinoMovies)
   const pinoySeries = useRow('filipino-series', getFilipinoSeries)
 
-  const hero = trending.data?.find((t) => t.backdrop_path) ?? trending.data?.[0]
+  // Featured carousel: loop through the top movies (fall back to trending).
+  const heroItems =
+    (movies.data && movies.data.length ? movies.data : trending.data) ?? []
 
   return (
     <div className="pb-16">
-      <Hero item={hero} />
+      <HeroCarousel items={heroItems} />
 
       <div className="relative z-10 -mt-10 animate-fade-in-up">
         <ContentRow

@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
+import { setRememberedUser } from '../lib/rememberedUser'
 
 const AuthContext = createContext(null)
 
@@ -34,8 +35,17 @@ export function AuthProvider({ children }) {
       unsubProfile = onSnapshot(
         doc(db, 'users', user.uid),
         (snap) => {
-          setUserProfile(snap.exists() ? { uid: user.uid, ...snap.data() } : null)
+          const profile = snap.exists() ? { uid: user.uid, ...snap.data() } : null
+          setUserProfile(profile)
           setLoading(false)
+          // Remember this user on-device for the "welcome back" quick login.
+          if (profile) {
+            setRememberedUser({
+              email: profile.email || user.email,
+              displayName: profile.displayName,
+              avatar: profile.avatar,
+            })
+          }
         },
         () => {
           // Permission errors after sign-out, etc.

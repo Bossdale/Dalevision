@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom'
 import { IMG, titleOf, typeOf, yearOf } from '../lib/tmdb'
 
 export default function Hero({ item }) {
-  if (!item) return <div className="h-[60vh] w-full animate-pulse bg-surface" />
+  if (!item) return <div className="h-full w-full animate-pulse bg-surface" />
   const type = typeOf(item)
   const backdrop = IMG.backdrop(item.backdrop_path)
   const title = titleOf(item)
   const rating = item.vote_average ? item.vote_average.toFixed(1) : null
 
   return (
-    <div className="relative h-[62vh] min-h-[420px] w-full">
+    <div className="relative h-full w-full">
       {backdrop && (
         <img
           src={backdrop}
@@ -34,7 +34,10 @@ export default function Hero({ item }) {
           {title}
         </h1>
 
-        <p className="line-clamp-3 max-w-xl text-sm text-gray-300 text-shadow sm:text-base">
+        <p
+          className="line-clamp-3 max-w-xl text-sm text-shadow sm:text-base"
+          style={{ color: '#ffffff' }}
+        >
           {item.overview}
         </p>
 

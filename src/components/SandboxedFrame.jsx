@@ -23,16 +23,24 @@ import { useEffect, useRef, useState } from 'react'
 // malvertising redirects. Set back to `true` when you're done testing.
 const STRICT_SANDBOX = false
 
-export default function SandboxedFrame({ src, title, timeoutMs = 8000 }) {
+export default function SandboxedFrame({ src, title, timeoutMs = 8000, onLoaded, onTimeout }) {
   const [loaded, setLoaded] = useState(false)
   const [timedOut, setTimedOut] = useState(false)
   const timer = useRef(null)
+  // Keep latest callbacks in refs so re-renders don't reset the load timer.
+  const onLoadedRef = useRef(onLoaded)
+  const onTimeoutRef = useRef(onTimeout)
+  onLoadedRef.current = onLoaded
+  onTimeoutRef.current = onTimeout
 
   useEffect(() => {
     setLoaded(false)
     setTimedOut(false)
     clearTimeout(timer.current)
-    timer.current = setTimeout(() => setTimedOut(true), timeoutMs)
+    timer.current = setTimeout(() => {
+      setTimedOut(true)
+      onTimeoutRef.current?.()
+    }, timeoutMs)
     return () => clearTimeout(timer.current)
   }, [src, timeoutMs])
 
@@ -40,6 +48,7 @@ export default function SandboxedFrame({ src, title, timeoutMs = 8000 }) {
     setLoaded(true)
     setTimedOut(false)
     clearTimeout(timer.current)
+    onLoadedRef.current?.()
   }
 
   return (

@@ -56,6 +56,17 @@ export const getSeriesPage = (page = 1, genreId) =>
     ? get('/discover/tv', { page, with_genres: genreId, sort_by: 'popularity.desc' })
     : get('/tv/popular', { page })
 
+// ---- Top 10 (global, trending today) ----------------------------------------
+export const getTop10Movies = () =>
+  get('/trending/movie/day').then((d) =>
+    (d.results ?? []).filter((r) => r.poster_path).slice(0, 10),
+  )
+
+export const getTop10Series = () =>
+  get('/trending/tv/day').then((d) =>
+    (d.results ?? []).filter((r) => r.poster_path).slice(0, 10),
+  )
+
 // ---- Top 10 (Philippines) ---------------------------------------------------
 // "Popular in the Philippines" — sorted by popularity, scoped to PH watch region,
 // with a fallback to PH-origin content. Returns up to 10 items with posters.
@@ -77,26 +88,45 @@ export const getTop10SeriesPH = () =>
 // ---- Filipino / Pinoy content (origin country PH) ---------------------------
 // Actual Philippine-produced titles (Star Cinema, Regal, GMA, etc.), by TMDB
 // origin country, sorted by popularity. Returns items with posters.
+//
+// Vivamax (mostly adult/erotic streaming titles) is excluded via its TMDB
+// production-company ids: 149142 (Vivamax) and 173083 (Vivamax Original Series).
+const VIVAMAX_COMPANIES = '149142,173083'
+
+const filipinoMovieParams = (page) => ({
+  with_origin_country: 'PH',
+  sort_by: 'popularity.desc',
+  without_companies: VIVAMAX_COMPANIES,
+  include_adult: false,
+  page,
+})
+
 export const getFilipinoMovies = (page = 1) =>
-  get('/discover/movie', {
-    with_origin_country: 'PH',
-    sort_by: 'popularity.desc',
-    page,
-  }).then((d) => (d.results ?? []).filter((r) => r.poster_path))
+  get('/discover/movie', filipinoMovieParams(page)).then((d) =>
+    (d.results ?? []).filter((r) => r.poster_path),
+  )
 
 export const getFilipinoSeries = (page = 1) =>
   get('/discover/tv', {
     with_origin_country: 'PH',
     sort_by: 'popularity.desc',
+    without_companies: VIVAMAX_COMPANIES,
+    include_adult: false,
     page,
   }).then((d) => (d.results ?? []).filter((r) => r.poster_path))
 
 // Full page objects (for genre pages / infinite scroll if needed later).
 export const getFilipinoMoviesPage = (page = 1) =>
-  get('/discover/movie', { with_origin_country: 'PH', sort_by: 'popularity.desc', page })
+  get('/discover/movie', filipinoMovieParams(page))
 
 export const getFilipinoSeriesPage = (page = 1) =>
-  get('/discover/tv', { with_origin_country: 'PH', sort_by: 'popularity.desc', page })
+  get('/discover/tv', {
+    with_origin_country: 'PH',
+    sort_by: 'popularity.desc',
+    without_companies: VIVAMAX_COMPANIES,
+    include_adult: false,
+    page,
+  })
 
 // ---- Details ----------------------------------------------------------------
 export const getMovieDetails = (id) =>
@@ -135,6 +165,29 @@ export const discoverByGenre = (type, genreId, page = 1) =>
     page,
     sort_by: 'popularity.desc',
   }).then((d) => d.results ?? [])
+
+// ---- People (for actor/character avatars) -----------------------------------
+export const getPopularPeople = (page = 1) =>
+  get('/person/popular', { page }).then((d) =>
+    (d.results ?? [])
+      .filter((p) => p.profile_path)
+      .map((p) => ({ id: p.id, name: p.name, profile_path: p.profile_path })),
+  )
+
+// Cast (characters) of a specific title — for franchise-categorized avatars.
+// Returns actor headshots labelled by character name.
+export const getCast = (type, id) =>
+  get(`/${type === 'tv' ? 'tv' : 'movie'}/${id}/credits`).then((d) =>
+    (d.cast ?? [])
+      .filter((c) => c.profile_path)
+      .slice(0, 18)
+      .map((c) => ({
+        id: c.id,
+        character: c.character || c.name,
+        actor: c.name,
+        profile_path: c.profile_path,
+      })),
+  )
 
 // ---- Search -----------------------------------------------------------------
 export const searchMulti = (query, page = 1) =>

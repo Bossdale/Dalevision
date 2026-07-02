@@ -9,6 +9,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Pending from './pages/Pending'
 import Banned from './pages/Banned'
+import SelectAvatar from './pages/SelectAvatar'
 import Home from './pages/Home'
 import Movies from './pages/Movies'
 import Series from './pages/Series'
@@ -31,6 +32,9 @@ export default function App() {
       <Route element={<PrivateRoute />}>
         <Route path="/pending" element={<Pending />} />
         <Route path="/banned" element={<Banned />} />
+        {/* First-time avatar onboarding — any signed-in status */}
+        <Route path="/select-avatar" element={<SelectAvatar />} />
+
 
         {/* Approved users only */}
         <Route element={<ApprovedRoute />}>

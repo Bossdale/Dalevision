@@ -7,15 +7,25 @@ import { getDetails, titleOf } from '../lib/tmdb'
 import { useAuth } from '../contexts/AuthContext'
 import { addToWatchHistory } from '../lib/watchHistory'
 
+const AUTO_TIMEOUT_MS = 7000 // per-server probe window while auto-selecting
+
 export default function Watch() {
   const { type, id, season, episode } = useParams()
   const navigate = useNavigate()
   const { currentUser } = useAuth()
+
   const [sourceIdx, setSourceIdx] = useState(0)
+  // Auto mode = keep advancing to the next server until one loads.
+  const [autoMode, setAutoMode] = useState(true)
+
+  // Reset probing whenever the target changes.
+  useEffect(() => {
+    setSourceIdx(0)
+    setAutoMode(true)
+  }, [type, id, season, episode])
 
   const source = VIDEO_SOURCES[sourceIdx]
 
-  // Fetch light metadata (for title + poster in history, and title-based sources).
   const { data } = useQuery({
     queryKey: ['details', type, id],
     queryFn: () => getDetails(type, id),
@@ -29,7 +39,6 @@ export default function Watch() {
     title: data ? titleOf(data) : '',
   })
 
-  // Record watch history once per view.
   useEffect(() => {
     if (!currentUser || !data) return
     addToWatchHistory(currentUser.uid, {
@@ -40,31 +49,68 @@ export default function Watch() {
     }).catch(() => {})
   }, [currentUser, data, id, type])
 
-  const nextSource = () => setSourceIdx((i) => (i + 1) % VIDEO_SOURCES.length)
+  const isLast = sourceIdx >= VIDEO_SOURCES.length - 1
+
+  // A server that never loads → auto-advance to the next one.
+  const handleTimeout = () => {
+    if (autoMode && !isLast) setSourceIdx((i) => i + 1)
+  }
+  // First server that loads → stop auto-advancing and stay here.
+  const handleLoaded = () => {
+    if (autoMode) setAutoMode(false)
+  }
+  // Manual pick → honor the user's choice, stop auto mode.
+  const selectServer = (i) => {
+    setAutoMode(false)
+    setSourceIdx(i)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
-      <div className="flex items-center justify-between gap-3 bg-black/90 px-4 py-2 text-white">
+      <div className="flex items-center gap-3 bg-black/90 px-3 py-2 text-white">
         <button
           onClick={() => navigate(-1)}
-          className="rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
+          className="shrink-0 rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
         >
           ‹ Back
         </button>
-        <p className="truncate text-sm text-gray-300">
+
+        <p className="hidden min-w-0 flex-1 truncate text-sm text-gray-300 sm:block">
           {data ? titleOf(data) : 'Loading…'}
           {type === 'tv' ? ` — S${season} E${episode}` : ''}
         </p>
-        <button
-          onClick={nextSource}
-          className="rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
-          title="Try a different source if this one fails"
-        >
-          Source: {source.name} ⟳
-        </button>
+
+        {/* Server selector — names hidden, shown as Server 1..N */}
+        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
+          {autoMode && (
+            <span className="shrink-0 rounded bg-accent/20 px-2 py-1 text-xs text-accent">
+              Auto…
+            </span>
+          )}
+          {VIDEO_SOURCES.map((s, i) => (
+            <button
+              key={s.id}
+              onClick={() => selectServer(i)}
+              className={`shrink-0 rounded px-2.5 py-1.5 text-xs transition ${
+                i === sourceIdx
+                  ? 'bg-accent font-semibold text-white'
+                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              }`}
+            >
+              Server {i + 1}
+            </button>
+          ))}
+        </div>
       </div>
+
       <div className="relative flex-1">
-        <SandboxedFrame src={src} title="Video player" />
+        <SandboxedFrame
+          src={src}
+          title="Video player"
+          timeoutMs={autoMode ? AUTO_TIMEOUT_MS : 8000}
+          onLoaded={handleLoaded}
+          onTimeout={handleTimeout}
+        />
       </div>
     </div>
   )

@@ -39,8 +39,9 @@ export default function Register() {
         createdAt: serverTimestamp(),
         watchHistory: [],
       })
-      // AuthContext will pick up the profile; guards route to /pending.
-      navigate('/', { replace: true })
+      // First-time users go straight to avatar selection; from there the guards
+      // route them to /pending (or home once approved).
+      navigate('/select-avatar', { replace: true })
     } catch (err) {
       console.error('[register] failed:', err.code, err.message, err)
       setError(friendlyAuthError(err.code))

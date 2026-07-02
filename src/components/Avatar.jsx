@@ -1,7 +1,28 @@
 import { getAvatar } from '../lib/avatars'
+import { IMG } from '../lib/tmdb'
 
-// Renders a preset avatar as an inline SVG circle with an initial.
+// An avatar id is either:
+//  - a TMDB profile path ("/abc.jpg") or full URL  -> render the image
+//  - a legacy color id ("avatar3")                 -> render the SVG initial
+export function isImageAvatar(id) {
+  return typeof id === 'string' && (id.startsWith('/') || id.startsWith('http'))
+}
+
 export default function Avatar({ id, size = 36, className = '' }) {
+  if (isImageAvatar(id)) {
+    const src = id.startsWith('http') ? id : IMG.profile(id, 'w185')
+    return (
+      <img
+        src={src}
+        alt="avatar"
+        width={size}
+        height={size}
+        style={{ width: size, height: size }}
+        className={`rounded-md object-cover ${className}`}
+      />
+    )
+  }
+
   const a = getAvatar(id)
   return (
     <svg

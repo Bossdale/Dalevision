@@ -24,11 +24,11 @@ export default function ContentRow({ title, items, loading, error }) {
       )}
 
       {!loading && !error && items && items.length > 0 && (
-        <div className="group relative">
+        <div className="group/row relative">
           <button
             onClick={() => scrollBy(-1)}
             aria-label="Scroll left"
-            className="absolute left-0 top-0 z-20 hidden h-full w-12 items-center justify-center bg-gradient-to-r from-black/60 to-transparent text-2xl text-white opacity-0 transition-opacity hover:from-black/80 group-hover:opacity-100 md:flex"
+            className="absolute left-0 top-0 z-20 hidden h-full w-12 items-center justify-center bg-gradient-to-r from-black/60 to-transparent text-2xl text-white opacity-0 transition-opacity hover:from-black/80 group-hover/row:opacity-100 md:flex"
           >
             ‹
           </button>
@@ -43,7 +43,7 @@ export default function ContentRow({ title, items, loading, error }) {
           <button
             onClick={() => scrollBy(1)}
             aria-label="Scroll right"
-            className="absolute right-0 top-0 z-20 hidden h-full w-12 items-center justify-center bg-gradient-to-l from-black/60 to-transparent text-2xl text-white opacity-0 transition-opacity hover:from-black/80 group-hover:opacity-100 md:flex"
+            className="absolute right-0 top-0 z-20 hidden h-full w-12 items-center justify-center bg-gradient-to-l from-black/60 to-transparent text-2xl text-white opacity-0 transition-opacity hover:from-black/80 group-hover/row:opacity-100 md:flex"
           >
             ›
           </button>

@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../contexts/AuthContext'
-import { AVATARS } from '../lib/avatars'
 import Avatar from '../components/Avatar'
+import AvatarPicker from '../components/AvatarPicker'
+import ChangePassword from '../components/ChangePassword'
 import { IMG } from '../lib/tmdb'
 import { clearWatchHistory } from '../lib/watchHistory'
 
@@ -58,20 +59,9 @@ export default function Profile() {
         placeholder="Display name"
       />
 
-      <p className="mb-2 text-sm text-gray-400">Choose an avatar</p>
-      <div className="mb-6 grid grid-cols-6 gap-3 sm:grid-cols-8 md:grid-cols-12">
-        {AVATARS.map((a) => (
-          <button
-            key={a.id}
-            onClick={() => setAvatar(a.id)}
-            className={`rounded-md ring-2 transition ${
-              avatar === a.id ? 'ring-accent' : 'ring-transparent hover:ring-white/40'
-            }`}
-            aria-label={`Select ${a.id}`}
-          >
-            <Avatar id={a.id} size={44} />
-          </button>
-        ))}
+      <p className="mb-3 text-sm text-gray-400">Choose an avatar</p>
+      <div className="mb-6">
+        <AvatarPicker value={avatar} onChange={setAvatar} />
       </div>
 
       <div className="flex items-center gap-3">
@@ -80,6 +70,12 @@ export default function Profile() {
         </button>
         {msg && <span className="text-sm text-gray-400">{msg}</span>}
       </div>
+
+      {/* Change password */}
+      <section className="mt-12">
+        <h2 className="section-title mb-4">Change Password</h2>
+        <ChangePassword />
+      </section>
 
       {/* Watch history */}
       <section className="mt-12">

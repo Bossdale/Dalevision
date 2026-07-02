@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore'
-import { db } from '../lib/firebase'
+import { sendPasswordResetEmail } from 'firebase/auth'
+import { auth, db } from '../lib/firebase'
+import { sendApprovalEmail } from '../lib/email'
 import { useAuth } from '../contexts/AuthContext'
 import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
@@ -18,6 +20,7 @@ export default function Admin() {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [tab, setTab] = useState('pending')
   const [search, setSearch] = useState('')
   const [busyId, setBusyId] = useState(null)
@@ -48,6 +51,33 @@ export default function Admin() {
       setError('Update failed.')
     } finally {
       setBusyId(null)
+    }
+  }
+
+  // Approve a user AND email them the good news (email is a no-op if EmailJS
+  // isn't configured).
+  const approveUser = async (u) => {
+    await setStatus(u.uid, 'approved')
+    try {
+      const res = await sendApprovalEmail({ toEmail: u.email, toName: u.displayName })
+      if (res.ok) setNotice(`Approved ${u.email} — approval email sent.`)
+      else if (res.skipped)
+        setNotice(`Approved ${u.email}. (Email not configured — skipped.)`)
+    } catch {
+      setNotice(`Approved ${u.email}, but the approval email failed to send.`)
+    }
+  }
+
+  const resetPassword = async (email) => {
+    setError('')
+    setNotice('')
+    if (!email) return
+    if (!window.confirm(`Send a password-reset link to ${email}?`)) return
+    try {
+      await sendPasswordResetEmail(auth, email)
+      setNotice(`Password-reset link sent to ${email}.`)
+    } catch {
+      setError(`Could not send reset email to ${email}.`)
     }
   }
 
@@ -126,6 +156,9 @@ export default function Admin() {
         {error && (
           <p className="mb-4 rounded bg-red-100 px-3 py-2 text-sm text-red-700">{error}</p>
         )}
+        {notice && (
+          <p className="mb-4 rounded bg-green-100 px-3 py-2 text-sm text-green-700">{notice}</p>
+        )}
 
         {loading ? (
           <Spinner />
@@ -176,7 +209,7 @@ export default function Admin() {
                           {u.status !== 'approved' && (
                             <button
                               disabled={busy}
-                              onClick={() => setStatus(u.uid, 'approved')}
+                              onClick={() => approveUser(u)}
                               className="rounded bg-green-600 px-2.5 py-1 text-xs text-white hover:bg-green-700 disabled:opacity-50"
                             >
                               Approve
@@ -191,6 +224,14 @@ export default function Admin() {
                               Ban
                             </button>
                           )}
+                          <button
+                            disabled={busy}
+                            onClick={() => resetPassword(u.email)}
+                            className="rounded bg-blue-600 px-2.5 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-50"
+                            title="Send a password-reset link to this user's email"
+                          >
+                            Reset PW
+                          </button>
                           {!isSelf && (
                             <button
                               disabled={busy}
@@ -213,6 +254,8 @@ export default function Admin() {
         <p className="mt-4 text-xs text-gray-500">
           Note: “Delete” removes the Firestore document only. Removing the Firebase Auth
           account requires a Cloud Function using the Admin SDK. Banning is recommended.
+          “Reset PW” emails the user a Firebase password-reset link (the client SDK can’t
+          set another user’s password directly — that also needs a Cloud Function).
         </p>
       </div>
     </div>
