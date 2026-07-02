@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 
+import Splash from './components/Splash'
 import Layout from './components/Layout'
 import PrivateRoute from './components/PrivateRoute'
 import ApprovedRoute from './components/ApprovedRoute'
@@ -22,8 +24,21 @@ import Admin from './pages/Admin'
 import NotFound from './pages/NotFound'
 
 export default function App() {
+  // Show the logo-animation splash once per browser session (survives refresh,
+  // replays on a new session). The app renders behind it and is revealed by the
+  // smooth fade-out.
+  const [showSplash, setShowSplash] = useState(
+    () => !sessionStorage.getItem('dalevision:splashSeen'),
+  )
+  const finishSplash = () => {
+    sessionStorage.setItem('dalevision:splashSeen', '1')
+    setShowSplash(false)
+  }
+
   return (
-    <Routes>
+    <>
+      {showSplash && <Splash onFinish={finishSplash} />}
+      <Routes>
       {/* Public */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
@@ -62,6 +77,7 @@ export default function App() {
 
       {/* Catch-all */}
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </>
   )
 }
