@@ -2,6 +2,60 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Living gradient blobs (used on auth screens) */
+@keyframes blobFloatA {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(12%, -8%) scale(1.18);
+  }
+  66% {
+    transform: translate(-8%, 10%) scale(0.9);
+  }
+}
+@keyframes blobFloatB {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-12%, 8%) scale(0.92);
+  }
+  66% {
+    transform: translate(10%, -10%) scale(1.22);
+  }
+}
+@keyframes blobPulse {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.animate-blob-a {
+  animation: blobFloatA 16s ease-in-out infinite, blobPulse 9s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.animate-blob-b {
+  animation: blobFloatB 20s ease-in-out infinite, blobPulse 11s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.animate-blob-c {
+  animation: blobFloatA 24s ease-in-out infinite reverse, blobPulse 13s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-blob-a,
+  .animate-blob-b,
+  .animate-blob-c {
+    animation: none;
+  }
+}
+
 @layer base {
   html,
   body,
