@@ -24,7 +24,7 @@ import { useEffect, useRef, useState } from 'react'
 //               can open, but they can't hijack/redirect your tab. RECOMMENDED.
 //  'off'      – no sandbox at all (source fully unrestricted; max malvertising
 //               risk). Only for testing.
-const SANDBOX_MODE = 'balanced'
+const SANDBOX_MODE = 'off'
 
 const SANDBOX_TOKENS = {
   strict: 'allow-scripts allow-same-origin',
