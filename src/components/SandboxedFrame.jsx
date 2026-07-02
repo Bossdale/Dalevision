@@ -15,13 +15,21 @@ import { useEffect, useRef, useState } from 'react'
  *    limits which domains this page may frame — it does not stop child popups.
  */
 
-// ⚠️ TEMPORARY TEST MODE — SANDBOX DISABLED ⚠️
-// While this is `false`, the iframe sandbox is REMOVED, so embeds can open
-// pop-ups/pop-unders, submit forms, and redirect the page freely — i.e. behave
-// exactly like visiting the piracy site directly, ads and all. This turns OFF
-// the anti-pop-up / anti-redirect / anti-phishing protection and exposes you to
-// malvertising redirects. Set back to `true` when you're done testing.
-const STRICT_SANDBOX = false
+// How much the embedded source is allowed to do:
+//  'strict'   – block pop-ups AND tab redirects (max protection; some sources
+//               refuse to play).
+//  'balanced' – allow pop-ups + forms so the source works, but STILL block
+//               main-tab redirects (no allow-top-navigation) and keep any
+//               pop-up sandboxed (no allow-popups-to-escape-sandbox). Pop-ups
+//               can open, but they can't hijack/redirect your tab. RECOMMENDED.
+//  'off'      – no sandbox at all (source fully unrestricted; max malvertising
+//               risk). Only for testing.
+const SANDBOX_MODE = 'balanced'
+
+const SANDBOX_TOKENS = {
+  strict: 'allow-scripts allow-same-origin',
+  balanced: 'allow-scripts allow-same-origin allow-popups allow-forms',
+}
 
 export default function SandboxedFrame({ src, title, timeoutMs = 8000, onLoaded, onTimeout }) {
   const [loaded, setLoaded] = useState(false)
@@ -78,9 +86,8 @@ export default function SandboxedFrame({ src, title, timeoutMs = 8000, onLoaded,
           className="h-full w-full border-0"
           referrerPolicy="no-referrer"
           allowFullScreen
-          // When STRICT_SANDBOX is false, the sandbox attribute is omitted
-          // entirely → the embed runs fully unrestricted.
-          {...(STRICT_SANDBOX ? { sandbox: 'allow-scripts allow-same-origin' } : {})}
+          // 'off' omits the sandbox entirely; otherwise apply the mode's tokens.
+          {...(SANDBOX_MODE === 'off' ? {} : { sandbox: SANDBOX_TOKENS[SANDBOX_MODE] })}
         />
       )}
     </div>

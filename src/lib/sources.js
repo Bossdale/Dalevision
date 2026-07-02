@@ -12,18 +12,6 @@ export const VIDEO_SOURCES = [
     tv: (id, s, e) => `https://vidsrc.me/embed/tv?tmdb=${id}&season=${s}&episode=${e}`,
   },
   {
-    id: 'vidsrccc',
-    name: 'VidSrc.cc',
-    movie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
-    tv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'embedsu',
-    name: 'Embed.su',
-    movie: (id) => `https://embed.su/embed/movie/${id}`,
-    tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-  },
-  {
     id: 'vidlink',
     name: 'VidLink',
     movie: (id) => `https://vidlink.pro/movie/${id}`,
@@ -34,6 +22,18 @@ export const VIDEO_SOURCES = [
     name: '2Embed',
     movie: (id) => `https://www.2embed.cc/embed/${id}`,
     tv: (id, s, e) => `https://www.2embed.cc/embedtv/${id}&s=${s}&e=${e}`,
+  },
+  {
+    id: 'vidsrccc',
+    name: 'VidSrc.cc',
+    movie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    tv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'embedsu',
+    name: 'Embed.su',
+    movie: (id) => `https://embed.su/embed/movie/${id}`,
+    tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
   },
   {
     id: 'autoembed',
