@@ -17,6 +17,8 @@ export default function Watch() {
   const [sourceIdx, setSourceIdx] = useState(0)
   // Auto mode = keep advancing to the next server until one loads.
   const [autoMode, setAutoMode] = useState(true)
+  // Collapsible server list: false = single button, true = full list.
+  const [serversOpen, setServersOpen] = useState(false)
 
   // Reset probing whenever the target changes.
   useEffect(() => {
@@ -49,6 +51,29 @@ export default function Watch() {
     }).catch(() => {})
   }, [currentUser, data, id, type])
 
+  // ---- Next-episode logic (TV only) ----
+  // We can't detect playback end inside a cross-origin iframe, so this button is
+  // always available. It rolls into the next season and hides at series end.
+  const curSeason = Number(season) || 1
+  const curEp = Number(episode) || 1
+  const seasons = (data?.seasons ?? []).filter(
+    (s) => s.season_number > 0 && s.episode_count > 0,
+  )
+  const epCount = seasons.find((s) => s.season_number === curSeason)?.episode_count ?? null
+  const hasNextInSeason = epCount != null && curEp < epCount
+  const hasNextSeason = seasons.some((s) => s.season_number === curSeason + 1)
+  const nextEpisode =
+    type !== 'tv'
+      ? null
+      : hasNextInSeason
+        ? { s: curSeason, e: curEp + 1 }
+        : hasNextSeason
+          ? { s: curSeason + 1, e: 1 }
+          : null
+  const goNextEpisode = () => {
+    if (nextEpisode) navigate(`/watch/tv/${id}/${nextEpisode.s}/${nextEpisode.e}`)
+  }
+
   const isLast = sourceIdx >= VIDEO_SOURCES.length - 1
 
   // A server that never loads → auto-advance to the next one.
@@ -69,7 +94,7 @@ export default function Watch() {
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center gap-3 bg-black/90 px-3 py-2 text-white">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate(`/detail/${type}/${id}`)}
           className="shrink-0 rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
         >
           ‹ Back
@@ -80,27 +105,57 @@ export default function Watch() {
           {type === 'tv' ? ` — S${season} E${episode}` : ''}
         </p>
 
-        {/* Server selector — names hidden, shown as Server 1..N */}
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
-          {autoMode && (
-            <span className="shrink-0 rounded bg-accent/20 px-2 py-1 text-xs text-accent">
-              Auto…
-            </span>
-          )}
-          {VIDEO_SOURCES.map((s, i) => (
+        {/* Next Episode (TV only) — before the server list */}
+        {nextEpisode && (
+          <button
+            onClick={goNextEpisode}
+            title={`Play S${nextEpisode.s} E${nextEpisode.e}`}
+            className="shrink-0 rounded bg-accent px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-accent-hover"
+          >
+            Next Episode ›
+          </button>
+        )}
+
+        {/* Collapsible server selector — names hidden, shown as Server 1..N */}
+        {autoMode && (
+          <span className="shrink-0 rounded bg-accent/20 px-2 py-1 text-xs text-accent">
+            Auto…
+          </span>
+        )}
+        {!serversOpen ? (
+          <button
+            onClick={() => setServersOpen(true)}
+            className="shrink-0 rounded bg-white/10 px-3 py-1.5 text-xs text-gray-200 transition hover:bg-white/20"
+          >
+            Server {sourceIdx + 1} ▾
+          </button>
+        ) : (
+          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
             <button
-              key={s.id}
-              onClick={() => selectServer(i)}
-              className={`shrink-0 rounded px-2.5 py-1.5 text-xs transition ${
-                i === sourceIdx
-                  ? 'bg-accent font-semibold text-white'
-                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
-              }`}
+              onClick={() => setServersOpen(false)}
+              aria-label="Collapse server list"
+              className="shrink-0 rounded bg-white/10 px-2.5 py-1.5 text-xs text-gray-200 transition hover:bg-white/20"
             >
-              Server {i + 1}
+              ‹
             </button>
-          ))}
-        </div>
+            {VIDEO_SOURCES.map((s, i) => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  selectServer(i)
+                  setServersOpen(false)
+                }}
+                className={`shrink-0 rounded px-2.5 py-1.5 text-xs transition ${
+                  i === sourceIdx
+                    ? 'bg-accent font-semibold text-white'
+                    : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                }`}
+              >
+                Server {i + 1}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="relative flex-1">

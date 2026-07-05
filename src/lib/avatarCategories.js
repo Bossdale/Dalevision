@@ -7,6 +7,6 @@ export const AVATAR_CATEGORIES = [
   { key: 'prisonbreak', label: 'Prison Break', type: 'tv', id: 2288 },
   { key: 'avengers', label: 'Avengers', type: 'movie', id: 299534 }, // Endgame (big cast)
   { key: 'moneyheist', label: 'Money Heist', type: 'tv', id: 71446 },
-  { key: 'bridgerton', label: 'Bridgerton', type: 'tv', id: 63247 },
+  { key: 'bridgerton', label: 'Bridgerton', type: 'tv', id: 91239 },
   { key: 'strangerthings', label: 'Stranger Things', type: 'tv', id: 66732 },
 ]

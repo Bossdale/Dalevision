@@ -20,8 +20,8 @@ export default function AuthShell({ title, children, footer }) {
         </Link>
       </header>
 
-      <main className="relative flex flex-1 items-center justify-center px-4 pb-10">
-        <div className="glass-card w-full max-w-md animate-fade-in-up p-8">
+      <main className="relative flex flex-1 items-center justify-center px-6 py-12 sm:px-4">
+        <div className="glass-card w-full max-w-md animate-fade-in-up p-8 sm:p-10">
           {title && <h1 className="mb-6 text-2xl font-bold">{title}</h1>}
           {children}
           {footer && <div className="mt-6 text-sm text-gray-400">{footer}</div>}

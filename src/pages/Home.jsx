@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import HeroCarousel from '../components/HeroCarousel'
 import ContentRow from '../components/ContentRow'
+import AdblockNotice from '../components/AdblockNotice'
+import RecentlyWatched from '../components/RecentlyWatched'
 import Top10Row from '../components/Top10Row'
 import {
   getTrending,
@@ -33,9 +35,11 @@ export default function Home() {
 
   return (
     <div className="pb-16">
+      <AdblockNotice />
       <HeroCarousel items={heroItems} />
 
       <div className="relative z-10 -mt-10 animate-fade-in-up">
+        <RecentlyWatched />
         <ContentRow
           title="Trending Now"
           items={trending.data}

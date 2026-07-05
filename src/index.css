@@ -127,7 +127,20 @@
 
   /* --- Inputs --- */
   .input {
-    @apply w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-400 outline-none backdrop-blur-md transition focus:border-accent/60 focus:ring-2 focus:ring-accent/40;
+    @apply w-full rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-white placeholder-gray-400 outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/40;
+  }
+  /* Chrome/Edge autofill turns inputs white with hidden text — force the dark
+     theme so text stays readable and the box style stays consistent. */
+  .input:-webkit-autofill,
+  .input:-webkit-autofill:hover,
+  .input:-webkit-autofill:focus,
+  input:-webkit-autofill {
+    -webkit-text-fill-color: #ffffff;
+    caret-color: #ffffff;
+    -webkit-box-shadow: 0 0 0 1000px #1f1f27 inset;
+    box-shadow: 0 0 0 1000px #1f1f27 inset;
+    border-radius: 0.75rem;
+    transition: background-color 9999s ease-in-out 0s;
   }
   .select-glass {
     @apply rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-gray-200 outline-none backdrop-blur-md transition focus:border-accent/60;

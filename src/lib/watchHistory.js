@@ -31,6 +31,20 @@ export async function addToWatchHistory(uid, item) {
   })
 }
 
+export async function removeFromWatchHistory(uid, id, type) {
+  if (!uid || !id) return
+  const ref = doc(db, 'users', uid)
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref)
+    if (!snap.exists()) return
+    const current = snap.data().watchHistory || []
+    const next = current.filter(
+      (h) => !(String(h.id) === String(id) && h.type === type),
+    )
+    tx.update(ref, { watchHistory: next })
+  })
+}
+
 export async function clearWatchHistory(uid) {
   if (!uid) return
   const ref = doc(db, 'users', uid)
