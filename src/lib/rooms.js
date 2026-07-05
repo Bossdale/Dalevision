@@ -61,10 +61,14 @@ export const setSelection = (id, selection) =>
   updateDoc(roomRef(id), {
     selection,
     playback: { state: 'paused', positionSeconds: 0, updatedAt: Date.now() },
+    cue: null,
   })
 
 export const updatePlayback = (id, playback) =>
   updateDoc(roomRef(id), { playback: { ...playback, updatedAt: Date.now() } })
+
+// Shared "3-2-1" countdown cue (host-triggered). { at: <ms epoch> }.
+export const updateCue = (id, cue) => updateDoc(roomRef(id), { cue })
 
 export const closeRoom = (id) => updateDoc(roomRef(id), { status: 'closed' })
 

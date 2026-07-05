@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { IMG, getDetails, pickTrailerKey, titleOf, yearOf } from '../lib/tmdb'
+import { newRoomId } from '../lib/rooms'
 import Spinner from '../components/Spinner'
 
 // Format TMDB runtime (minutes) as "2h 14m" / "45m".
@@ -170,7 +171,15 @@ export default function Detail() {
               <button onClick={goDownload} className="btn-secondary">
                 ⭳ Download
               </button>
-              <button onClick={() => navigate('/watch-together')} className="btn-secondary">
+              <button
+                onClick={() =>
+                  navigate(
+                    `/watch-together/${newRoomId()}?et=${type}&eid=${id}` +
+                      (isTv ? `&es=${season}&ee=${episode}` : ''),
+                  )
+                }
+                className="btn-secondary"
+              >
                 👥 Watch Together
               </button>
               {trailerKey && (

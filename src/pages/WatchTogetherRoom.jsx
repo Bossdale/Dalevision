@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../contexts/AuthContext'
 import {
   createRoom,
@@ -10,10 +11,14 @@ import {
   setSelection,
   subscribeMembers,
   subscribeRoom,
+  updateCue,
   updatePlayback,
 } from '../lib/rooms'
 import { LEGAL_LIBRARY, getLibraryItem } from '../lib/legalLibrary'
+import { IMG, searchMulti, titleOf, typeOf } from '../lib/tmdb'
+import useDebounce from '../hooks/useDebounce'
 import SyncPlayer from '../components/SyncPlayer'
+import EmbedTogether from '../components/EmbedTogether'
 import VideoChat from '../components/VideoChat'
 import RoomChat from '../components/RoomChat'
 import RoomRoster from '../components/RoomRoster'
@@ -22,18 +27,89 @@ import Spinner from '../components/Spinner'
 function libItemToSelection(item) {
   if (!item) return null
   return {
+    mode: 'library',
     itemId: item.id,
     title: item.title,
-    poster: item.poster || null,
     streamUrl: item.streamUrl,
     kind: item.kind,
   }
 }
 
+// Host picker shown when no title is selected: free synced library + a search
+// for any TMDB title (loose-sync via embeds).
+function Picker({ onPickLibrary, onPickEmbed }) {
+  const [q, setQ] = useState('')
+  const debounced = useDebounce(q.trim(), 300)
+  const { data: results = [] } = useQuery({
+    queryKey: ['wt-search', debounced],
+    queryFn: () => searchMulti(debounced),
+    enabled: debounced.length >= 2,
+  })
+
+  return (
+    <div className="glass-card p-4">
+      <p className="mb-2 text-sm font-semibold text-gray-200">Search any title (loose-sync)</p>
+      <input
+        className="input mb-3"
+        placeholder="Search movies & series…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      {results.length > 0 && (
+        <div className="mb-5 grid grid-cols-3 gap-3 sm:grid-cols-5">
+          {results.slice(0, 15).map((r) => (
+            <button
+              key={`${r.id}-${r.media_type}`}
+              onClick={() =>
+                onPickEmbed({
+                  mode: 'embed',
+                  type: typeOf(r),
+                  tmdbId: r.id,
+                  season: 1,
+                  episode: 1,
+                  serverIdx: 0,
+                })
+              }
+              className="text-left"
+              title={titleOf(r)}
+            >
+              {IMG.poster(r.poster_path) ? (
+                <img
+                  src={IMG.poster(r.poster_path)}
+                  alt={titleOf(r)}
+                  className="w-full rounded-lg ring-1 ring-white/10 transition hover:ring-accent"
+                />
+              ) : (
+                <div className="flex h-32 items-center justify-center rounded-lg bg-surface p-1 text-center text-[10px] text-gray-500">
+                  {titleOf(r)}
+                </div>
+              )}
+              <p className="mt-1 line-clamp-1 text-[11px] text-gray-300">{titleOf(r)}</p>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <p className="mb-2 text-sm font-semibold text-gray-200">Free library (frame-synced)</p>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {LEGAL_LIBRARY.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => onPickLibrary(item)}
+            className="glass rounded-xl p-3 text-left transition hover:ring-1 hover:ring-accent"
+          >
+            <p className="text-sm font-semibold text-white">{item.title}</p>
+            <p className="text-xs text-gray-400">{item.subtitle}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function WatchTogetherRoom() {
   const { roomId } = useParams()
   const [params] = useSearchParams()
-  const preset = params.get('preset')
   const navigate = useNavigate()
   const { currentUser, userProfile } = useAuth()
 
@@ -49,10 +125,8 @@ export default function WatchTogetherRoom() {
     }),
     [currentUser, userProfile],
   )
-
   const isHost = room && room.hostUid === currentUser?.uid
 
-  // Load existing room (join) or create a new one (become host) — once.
   useEffect(() => {
     if (!currentUser || initRef.current) return
     initRef.current = true
@@ -60,15 +134,30 @@ export default function WatchTogetherRoom() {
       const existing = await getRoomOnce(roomId)
       if (existing) {
         await joinRoom(roomId, me, existing.hostUid === currentUser.uid ? 'host' : 'guest')
-      } else {
-        const sel = preset ? libItemToSelection(getLibraryItem(preset)) : null
-        await createRoom(roomId, me, sel)
+        return
       }
+      // First in → become host. Seed selection from preset/embed query params.
+      let sel = null
+      const et = params.get('et')
+      const eid = params.get('eid')
+      const preset = params.get('preset')
+      if (et && eid) {
+        sel = {
+          mode: 'embed',
+          type: et,
+          tmdbId: eid,
+          season: Number(params.get('es')) || 1,
+          episode: Number(params.get('ee')) || 1,
+          serverIdx: 0,
+        }
+      } else if (preset) {
+        sel = libItemToSelection(getLibraryItem(preset))
+      }
+      await createRoom(roomId, me, sel)
     })().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser, roomId])
 
-  // Live subscriptions + presence heartbeat + leave on unmount.
   useEffect(() => {
     if (!currentUser) return undefined
     const unsubRoom = subscribeRoom(roomId, setRoom)
@@ -88,7 +177,7 @@ export default function WatchTogetherRoom() {
 
   const selection = room.selection
   const onHostEvent = (pb) => isHost && updatePlayback(roomId, pb).catch(() => {})
-  const pick = (item) => setSelection(roomId, libItemToSelection(item)).catch(() => {})
+  const applySelection = (sel) => setSelection(roomId, sel).catch(() => {})
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
@@ -105,47 +194,41 @@ export default function WatchTogetherRoom() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-        {/* Player / picker */}
         <div>
           {selection ? (
-            <>
-              <SyncPlayer
-                streamUrl={selection.streamUrl}
-                kind={selection.kind}
+            selection.mode === 'embed' ? (
+              <EmbedTogether
+                selection={selection}
                 isHost={isHost}
-                playback={room.playback}
-                onHostEvent={onHostEvent}
+                cue={room.cue}
+                onSelect={applySelection}
+                onClear={() => applySelection(null)}
+                onCue={(c) => updateCue(roomId, c).catch(() => {})}
               />
-              <div className="mt-2 flex items-center justify-between">
-                <p className="text-sm text-gray-300">{selection.title}</p>
-                {isHost && (
-                  <button
-                    onClick={() => setSelection(roomId, null).catch(() => {})}
-                    className="text-xs text-gray-400 hover:text-white"
-                  >
-                    Change title
-                  </button>
-                )}
-              </div>
-            </>
+            ) : (
+              <>
+                <SyncPlayer
+                  streamUrl={selection.streamUrl}
+                  kind={selection.kind}
+                  isHost={isHost}
+                  playback={room.playback}
+                  onHostEvent={onHostEvent}
+                />
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-sm text-gray-300">{selection.title}</p>
+                  {isHost && (
+                    <button
+                      onClick={() => applySelection(null)}
+                      className="text-xs text-gray-400 hover:text-white"
+                    >
+                      Change title
+                    </button>
+                  )}
+                </div>
+              </>
+            )
           ) : isHost ? (
-            <div className="glass-card p-4">
-              <p className="mb-3 text-sm font-semibold text-gray-200">
-                Pick a title (free library)
-              </p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                {LEGAL_LIBRARY.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={() => pick(item)}
-                    className="glass rounded-xl p-3 text-left transition hover:ring-1 hover:ring-accent"
-                  >
-                    <p className="text-sm font-semibold text-white">{item.title}</p>
-                    <p className="text-xs text-gray-400">{item.subtitle}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Picker onPickLibrary={(i) => applySelection(libItemToSelection(i))} onPickEmbed={applySelection} />
           ) : (
             <div className="glass-card p-8 text-center text-gray-400">
               Waiting for the host to pick a title…
@@ -153,7 +236,6 @@ export default function WatchTogetherRoom() {
           )}
         </div>
 
-        {/* Side panel */}
         <div className="flex flex-col gap-4">
           <RoomRoster members={members} hostUid={room.hostUid} />
           <VideoChat roomId={roomId} identity={me.uid} name={me.name} />
