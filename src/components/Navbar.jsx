@@ -8,6 +8,7 @@ const links = [
   { to: '/movies', label: 'Movies' },
   { to: '/series', label: 'Series' },
   { to: '/search', label: 'Search' },
+  { to: '/watch-together', label: 'Watch Together' },
 ]
 
 export default function Navbar() {

@@ -170,6 +170,9 @@ export default function Detail() {
               <button onClick={goDownload} className="btn-secondary">
                 ⭳ Download
               </button>
+              <button onClick={() => navigate('/watch-together')} className="btn-secondary">
+                👥 Watch Together
+              </button>
               {trailerKey && (
                 <button onClick={() => setShowTrailer(true)} className="btn-secondary">
                   Trailer

@@ -13,6 +13,8 @@ export default defineConfig({
         manualChunks: {
           firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore'],
           vendor: ['react', 'react-dom', 'react-router-dom', '@tanstack/react-query'],
+          livekit: ['livekit-client', '@livekit/components-react', '@livekit/components-styles'],
+          hls: ['hls.js'],
         },
       },
     },

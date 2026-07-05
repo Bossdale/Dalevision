@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 
 import Splash from './components/Splash'
+import Spinner from './components/Spinner'
 import Layout from './components/Layout'
 import PrivateRoute from './components/PrivateRoute'
 import ApprovedRoute from './components/ApprovedRoute'
@@ -19,6 +20,10 @@ import Search from './pages/Search'
 import Detail from './pages/Detail'
 import Watch from './pages/Watch'
 import Download from './pages/Download'
+// Lazy-loaded so the heavy LiveKit/hls.js chunks only download when a user
+// actually opens Watch Together.
+const WatchTogether = lazy(() => import('./pages/WatchTogether'))
+const WatchTogetherRoom = lazy(() => import('./pages/WatchTogetherRoom'))
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import NotFound from './pages/NotFound'
@@ -65,6 +70,22 @@ export default function App() {
             <Route path="/series" element={<Series />} />
             <Route path="/search" element={<Search />} />
             <Route path="/detail/:type/:id" element={<Detail />} />
+            <Route
+              path="/watch-together"
+              element={
+                <Suspense fallback={<Spinner full label="Loading…" />}>
+                  <WatchTogether />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/watch-together/:roomId"
+              element={
+                <Suspense fallback={<Spinner full label="Joining room…" />}>
+                  <WatchTogetherRoom />
+                </Suspense>
+              }
+            />
             <Route path="/profile" element={<Profile />} />
           </Route>
 

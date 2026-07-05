@@ -37,6 +37,38 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ---- Watch Together rooms ----
+    match /rooms/{roomId} {
+      function isRoomHost() {
+        return isSignedIn()
+          && exists(/databases/$(database)/documents/rooms/$(roomId))
+          && get(/databases/$(database)/documents/rooms/$(roomId)).data.hostUid == request.auth.uid;
+      }
+
+      // Any signed-in user can read a room (needed to join by link).
+      allow read: if isSignedIn();
+
+      // Creator must set themselves as host.
+      allow create: if isSignedIn()
+        && request.resource.data.hostUid == request.auth.uid;
+
+      // Only the host may change selection / playback / status, or delete.
+      allow update, delete: if isRoomHost();
+
+      // Presence: each user writes only their own member doc.
+      match /members/{uid} {
+        allow read: if isSignedIn();
+        allow write: if isSelf(uid);
+      }
+
+      // Chat: any signed-in member may post as themselves; no edits/deletes.
+      match /messages/{msgId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn()
+          && request.resource.data.uid == request.auth.uid;
+      }
+    }
+
     // Everything else is denied by default.
   }
 }
