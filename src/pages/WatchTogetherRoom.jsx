@@ -193,7 +193,10 @@ export default function WatchTogetherRoom() {
         </button>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+      {/* Side panel (video chat + roster + chat) sits on the RIGHT on wide
+          screens AND whenever a phone/tablet is in landscape; only stacks
+          below in small portrait. */}
+      <div className="grid gap-4 max-lg:landscape:grid-cols-[1fr_minmax(240px,300px)] lg:grid-cols-[1fr_340px]">
         <div>
           {selection ? (
             selection.mode === 'embed' ? (

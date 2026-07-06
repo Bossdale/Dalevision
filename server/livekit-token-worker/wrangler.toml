@@ -1,8 +1,8 @@
 name = "dalevision-livekit-token"
 main = "src/index.js"
 compatibility_date = "2024-09-01"
-compatibility_flags = ["nodejs_compat"]
 
+# Dependency-free (Web Crypto) — no nodejs_compat needed.
 # Set these as secrets (not here):
 #   npx wrangler secret put LIVEKIT_API_KEY
 #   npx wrangler secret put LIVEKIT_API_SECRET
