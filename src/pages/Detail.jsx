@@ -65,7 +65,7 @@ export default function Detail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-base via-base/50 to-transparent" />
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/')}
           className="glass absolute left-4 top-4 rounded-full px-4 py-1.5 text-sm text-white transition hover:bg-white/20"
         >
           ‹ Back
@@ -221,17 +221,33 @@ export default function Detail() {
       {/* Trailer modal (YouTube — allowed by CSP frame-src) */}
       {showTrailer && trailerKey && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-2 bg-black/90 p-4"
           onClick={() => setShowTrailer(false)}
         >
-          <div className="aspect-video w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
-            <iframe
-              className="h-full w-full rounded"
-              src={`https://www.youtube-nocookie.com/embed/${trailerKey}?autoplay=1`}
-              title="Trailer"
-              allow="autoplay; encrypted-media; fullscreen"
-              allowFullScreen
-            />
+          <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="aspect-video w-full overflow-hidden rounded-lg bg-black">
+              <iframe
+                className="h-full w-full"
+                src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1&rel=0`}
+                title="Trailer"
+                allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
+            </div>
+            <div className="mt-2 flex items-center justify-between text-sm">
+              <a
+                href={`https://www.youtube.com/watch?v=${trailerKey}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-gray-300 hover:text-white"
+              >
+                ▶ Watch on YouTube ↗ (if it doesn’t play here)
+              </a>
+              <button onClick={() => setShowTrailer(false)} className="text-gray-400 hover:text-white">
+                Close ✕
+              </button>
+            </div>
           </div>
         </div>
       )}

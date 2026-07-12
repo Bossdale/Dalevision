@@ -49,10 +49,25 @@ export const VIDEO_SOURCES = [
   },
 ]
 
+// Download options. Dedicated "download" domains are unreliable, so these are
+// mostly players that include their own Download button — open them via the
+// Download page's "Open in new tab" (iframing these usually fails).
 export const DOWNLOAD_SOURCES = [
   {
+    id: 'vidfast',
+    name: 'VidFast',
+    movie: (id) => `https://vidfast.pro/movie/${id}`,
+    tv: (id, s, e) => `https://vidfast.pro/tv/${id}/${s}/${e}`,
+  },
+  {
+    id: 'vidsrccc',
+    name: 'VidSrc.cc',
+    movie: (id) => `https://vidsrc.cc/v2/embed/movie/${id}`,
+    tv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
+  },
+  {
     id: 'dlvidsrc',
-    name: 'VidSrc Download',
+    name: 'VidSrc DL',
     movie: (id) => `https://dl.vidsrc.me/movie/${id}`,
     tv: (id, s, e) => `https://dl.vidsrc.me/tv/${id}/${s}/${e}`,
   },

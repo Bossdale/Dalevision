@@ -60,6 +60,16 @@ export default function Download() {
         <p className="hidden min-w-0 flex-1 truncate text-sm text-gray-300 sm:block">
           Download{title ? ` — ${title}` : ''}
         </p>
+        {src && (
+          <a
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-hover"
+          >
+            ⤢ Open in new tab
+          </a>
+        )}
         <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
           {autoMode && (
             <span className="shrink-0 rounded bg-accent/20 px-2 py-1 text-xs text-accent">
@@ -90,6 +100,10 @@ export default function Download() {
           onTimeout={handleTimeout}
         />
       </div>
+      <p className="bg-black/90 px-3 py-1.5 text-center text-xs text-gray-500">
+        If the download page is blank, it’s blocking embedding — use{' '}
+        <span className="text-gray-300">Open in new tab</span>.
+      </p>
     </div>
   )
 }

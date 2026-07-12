@@ -4,9 +4,14 @@ import Hls from 'hls.js'
 // Own-player used by Watch Together. The HOST's native controls drive playback
 // and emit events; GUESTS have locked controls and follow the room's playback
 // state. This works because it's a same-origin <video> (unlike the embeds).
-export default function SyncPlayer({ streamUrl, kind, isHost, playback, onHostEvent }) {
+export default function SyncPlayer({ streamUrl, kind, isHost, playback, onHostEvent, volume = 1 }) {
   const videoRef = useRef(null)
   const [needGesture, setNeedGesture] = useState(false)
+
+  // Local movie volume (0–1). Each viewer controls their own.
+  useEffect(() => {
+    if (videoRef.current) videoRef.current.volume = Math.min(1, Math.max(0, volume))
+  }, [volume])
 
   // Attach the source (hls.js for .m3u8 where MSE is needed, native otherwise).
   useEffect(() => {

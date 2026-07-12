@@ -50,25 +50,27 @@ export default function Home() {
         {/* Netflix-style Top 10 — Philippines */}
         <Top10Row
           title="Top 10 Movies in the Philippines Today"
+          badge={null}
           items={top10Movies.data}
           loading={top10Movies.isLoading}
           error={top10Movies.isError}
         />
         <Top10Row
           title="Top 10 Series in the Philippines Today"
+          badge={null}
           items={top10Series.data}
           loading={top10Series.isLoading}
           error={top10Series.isError}
         />
 
         <ContentRow
-          title="🇵🇭 Filipino Movies"
+          title="Filipino Movies"
           items={pinoyMovies.data}
           loading={pinoyMovies.isLoading}
           error={pinoyMovies.isError}
         />
         <ContentRow
-          title="🇵🇭 Pinoy Series"
+          title="Pinoy Series"
           items={pinoySeries.data}
           loading={pinoySeries.isLoading}
           error={pinoySeries.isError}

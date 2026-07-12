@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { collection, deleteDoc, doc, getDocs, updateDoc } from 'firebase/firestore'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { auth, db } from '../lib/firebase'
@@ -17,6 +18,7 @@ const statusBadge = {
 
 export default function Admin() {
   const { currentUser } = useAuth()
+  const navigate = useNavigate()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -122,8 +124,16 @@ export default function Admin() {
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
       <div className="mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Admin — User Management</h1>
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/')}
+              className="rounded bg-gray-200 px-3 py-1.5 text-sm text-gray-800 hover:bg-gray-300"
+            >
+              ‹ Back to Home
+            </button>
+            <h1 className="text-2xl font-bold">Admin — User Management</h1>
+          </div>
           <button
             onClick={load}
             className="rounded bg-gray-900 px-3 py-1.5 text-sm text-white hover:bg-gray-700"

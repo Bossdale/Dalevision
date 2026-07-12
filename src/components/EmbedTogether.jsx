@@ -8,7 +8,7 @@ import { getDetails, titleOf } from '../lib/tmdb'
 // SELECTION (title / episode / server) — synced to everyone via the room doc —
 // but playback isn't frame-synced (embeds are opaque), so the host fires a
 // shared "3-2-1" countdown and everyone presses play together.
-export default function EmbedTogether({ selection, isHost, cue, onSelect, onClear, onCue }) {
+export default function EmbedTogether({ selection, isHost, cue, bare = false, onSelect, onClear, onCue }) {
   const { type, tmdbId, season = 1, episode = 1, serverIdx = 0 } = selection
 
   const { data } = useQuery({
@@ -33,21 +33,24 @@ export default function EmbedTogether({ selection, isHost, cue, onSelect, onClea
   const epCount =
     seasons.find((s) => s.season_number === (Number(season) || 1))?.episode_count ?? 1
 
-  // Countdown overlay driven by the shared cue timestamp.
+  // Countdown overlay. The cue is just a trigger id — each client runs its OWN
+  // local 3→2→1 timer, so everyone starts at 3 regardless of clock differences.
   const [remaining, setRemaining] = useState(null)
   useEffect(() => {
-    if (!cue?.at) {
-      setRemaining(null)
-      return undefined
+    if (!cue?.id) return undefined
+    let n = 3
+    setRemaining(3)
+    const iv = setInterval(() => {
+      n -= 1
+      setRemaining(n)
+      if (n <= 0) clearInterval(iv)
+    }, 1000)
+    const hide = setTimeout(() => setRemaining(null), 3000 + 1300) // clear "Play!"
+    return () => {
+      clearInterval(iv)
+      clearTimeout(hide)
     }
-    const tick = () => {
-      const r = Math.ceil((cue.at - Date.now()) / 1000)
-      setRemaining(r > -2 ? r : null) // show "Play!" briefly after hitting 0
-    }
-    tick()
-    const iv = setInterval(tick, 250)
-    return () => clearInterval(iv)
-  }, [cue?.at])
+  }, [cue?.id])
 
   const update = (patch) => onSelect({ ...selection, ...patch })
 
@@ -64,6 +67,7 @@ export default function EmbedTogether({ selection, isHost, cue, onSelect, onClea
         )}
       </div>
 
+      {bare ? null : (
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <p className="mr-auto text-sm text-gray-300">
           {title}
@@ -71,7 +75,7 @@ export default function EmbedTogether({ selection, isHost, cue, onSelect, onClea
         </p>
         {isHost && (
           <>
-            <button onClick={() => onCue({ at: Date.now() + 4000 })} className="btn-primary !px-3 !py-1.5 text-sm">
+            <button onClick={() => onCue({ id: Date.now() })} className="btn-primary !px-3 !py-1.5 text-sm">
               3‑2‑1 Play
             </button>
             <button onClick={onClear} className="btn-secondary !px-3 !py-1.5 text-sm">
@@ -80,8 +84,9 @@ export default function EmbedTogether({ selection, isHost, cue, onSelect, onClea
           </>
         )}
       </div>
+      )}
 
-      {isHost ? (
+      {bare ? null : isHost ? (
         <div className="mt-3 flex flex-wrap items-center gap-2">
           {type === 'tv' && seasons.length > 0 && (
             <>
