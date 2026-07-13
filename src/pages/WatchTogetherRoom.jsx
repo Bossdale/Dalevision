@@ -17,12 +17,14 @@ import {
 import { getLibraryItem } from '../lib/legalLibrary'
 import { IMG, getPopularMovies, searchMulti, titleOf, typeOf } from '../lib/tmdb'
 import useDebounce from '../hooks/useDebounce'
+import { VideoTrack } from '@livekit/components-react'
 import SyncPlayer from '../components/SyncPlayer'
 import EmbedTogether from '../components/EmbedTogether'
 import VideoChat from '../components/VideoChat'
 import RoomChat from '../components/RoomChat'
 import RoomRoster from '../components/RoomRoster'
 import Spinner from '../components/Spinner'
+import LiveProvider, { useLive } from '../components/LiveProvider'
 
 function libItemToSelection(item) {
   if (!item) return null
@@ -111,6 +113,23 @@ function Picker({ onPickEmbed }) {
   )
 }
 
+// Shows the host's shared screen (live mirror) when someone is screen-sharing;
+// otherwise renders the normal player node. Must be inside <LiveProvider>.
+function MovieArea({ player }) {
+  const live = useLive()
+  if (live.configured && live.screen) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
+        <VideoTrack trackRef={live.screen} className="h-full w-full object-contain" />
+        <span className="absolute left-3 top-3 rounded bg-black/60 px-2 py-1 text-xs text-gray-200 backdrop-blur-sm">
+          🖥 Watching host’s shared screen
+        </span>
+      </div>
+    )
+  }
+  return player
+}
+
 export default function WatchTogetherRoom() {
   const { roomId } = useParams()
   const [params] = useSearchParams()
@@ -119,7 +138,10 @@ export default function WatchTogetherRoom() {
 
   const [room, setRoom] = useState(undefined) // undefined = loading, null = missing
   const [members, setMembers] = useState([])
-  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [nativeFs, setNativeFs] = useState(false)
+  const [cssFs, setCssFs] = useState(false) // fallback overlay for iOS/unsupported
+  const isFs = nativeFs || cssFs
+  const [copied, setCopied] = useState(false)
   const stageRef = useRef(null) // wraps movie + video tiles; this is what goes fullscreen
   const initRef = useRef(false)
 
@@ -182,16 +204,27 @@ export default function WatchTogetherRoom() {
     }
   }, [currentUser, roomId])
 
-  // Reflect actual fullscreen state (also catches Esc-to-exit).
+  // Native fullscreen where supported (desktop, Android); CSS-overlay fallback
+  // for browsers that can't fullscreen a <div> (notably iOS Safari) so mobile
+  // landscape still shows only the movie + video tiles.
   useEffect(() => {
-    const onFs = () => setIsFullscreen(!!document.fullscreenElement)
+    const onFs = () => setNativeFs(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onFs)
     return () => document.removeEventListener('fullscreenchange', onFs)
   }, [])
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) stageRef.current?.requestFullscreen?.().catch(() => {})
-    else document.exitFullscreen?.()
+    if (isFs) {
+      if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
+      setCssFs(false)
+      return
+    }
+    const el = stageRef.current
+    if (el?.requestFullscreen) {
+      el.requestFullscreen().catch(() => setCssFs(true))
+    } else {
+      setCssFs(true) // iOS / unsupported → fake-fullscreen overlay
+    }
   }
 
   if (room === undefined) return <Spinner full label="Joining room…" />
@@ -202,6 +235,45 @@ export default function WatchTogetherRoom() {
   const onHostEvent = (pb) => isHost && updatePlayback(roomId, pb).catch(() => {})
   const applySelection = (sel) => setSelection(roomId, sel).catch(() => {})
 
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(roomId)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* clipboard blocked */
+    }
+  }
+
+  // The normal player node (used unless a screen-share mirror is active).
+  const playerNode = selection ? (
+    selection.mode === 'embed' ? (
+      <EmbedTogether
+        selection={selection}
+        isHost={isHost}
+        cue={room.cue}
+        bare={isFs}
+        onSelect={applySelection}
+        onClear={() => applySelection(null)}
+        onCue={(c) => updateCue(roomId, c).catch(() => {})}
+      />
+    ) : (
+      <SyncPlayer
+        streamUrl={selection.streamUrl}
+        kind={selection.kind}
+        isHost={isHost}
+        playback={room.playback}
+        onHostEvent={onHostEvent}
+      />
+    )
+  ) : isHost ? (
+    <Picker onPickEmbed={applySelection} />
+  ) : (
+    <div className="glass-card p-8 text-center text-gray-400">
+      Waiting for the host to pick a title…
+    </div>
+  )
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
@@ -211,97 +283,64 @@ export default function WatchTogetherRoom() {
             Room {roomId} · {isHost ? 'You are the host' : `Host: ${room.hostName}`}
           </p>
         </div>
-        <button onClick={() => navigate('/')} className="btn-secondary !py-1.5">
-          Leave
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={copyCode} className="btn-secondary !py-1.5">
+            {copied ? 'Copied!' : 'Copy Code'}
+          </button>
+          <button onClick={() => navigate('/')} className="btn-secondary !py-1.5">
+            Leave
+          </button>
+        </div>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-        <div className="space-y-3">
-          {/* Stage = movie + video tiles. Fullscreen applies to THIS element,
-              so only the movie and the video-call tiles are shown. */}
-          <div
-            ref={stageRef}
-            className={isFullscreen ? 'flex h-full w-full flex-col bg-black' : 'space-y-3'}
-          >
+      <LiveProvider roomId={roomId} identity={me.uid} name={me.name}>
+        <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
+          <div className="space-y-3">
+            {/* Stage = movie + video tiles; fullscreen shows only these. */}
             <div
+              ref={stageRef}
               className={
-                isFullscreen
-                  ? 'relative flex min-h-0 flex-1 items-center justify-center overflow-hidden'
-                  : 'relative'
+                isFs
+                  ? `flex flex-col bg-black ${cssFs ? 'fixed inset-0 z-[100]' : 'h-full w-full'}`
+                  : 'space-y-3'
               }
             >
-              <div className={isFullscreen ? 'w-full max-w-[177vh]' : 'w-full'}>
-                {selection ? (
-                  selection.mode === 'embed' ? (
-                    <EmbedTogether
-                      selection={selection}
-                      isHost={isHost}
-                      cue={room.cue}
-                      bare={isFullscreen}
-                      onSelect={applySelection}
-                      onClear={() => applySelection(null)}
-                      onCue={(c) => updateCue(roomId, c).catch(() => {})}
-                    />
-                  ) : (
-                    <SyncPlayer
-                      streamUrl={selection.streamUrl}
-                      kind={selection.kind}
-                      isHost={isHost}
-                      playback={room.playback}
-                      onHostEvent={onHostEvent}
-                    />
-                  )
-                ) : isHost ? (
-                  <Picker onPickEmbed={applySelection} />
-                ) : (
-                  <div className="glass-card p-8 text-center text-gray-400">
-                    Waiting for the host to pick a title…
-                  </div>
-                )}
-              </div>
+              <div
+                className={
+                  isFs
+                    ? 'relative flex min-h-0 flex-1 items-center justify-center overflow-hidden'
+                    : 'relative'
+                }
+              >
+                <div className={isFs ? 'w-full max-w-[177vh]' : 'w-full'}>
+                  <MovieArea player={playerNode} />
+                </div>
 
-              {selection && (
-                <button
-                  onClick={toggleFullscreen}
-                  className="absolute right-3 top-3 z-50 rounded bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/80"
-                >
-                  {isFullscreen ? 'Exit ⤢' : '⛶ Fullscreen'}
-                </button>
-              )}
-            </div>
-
-            {/* Library title / change-title — hidden in fullscreen */}
-            {selection?.mode === 'library' && !isFullscreen && (
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-sm text-gray-300">{selection.title}</p>
-                {isHost && (
+                {selection && (
                   <button
-                    onClick={() => applySelection(null)}
-                    className="text-xs text-gray-400 hover:text-white"
+                    onClick={toggleFullscreen}
+                    className="absolute right-3 top-3 z-50 rounded bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/80"
                   >
-                    Change title
+                    {isFs ? 'Exit ⤢' : '⛶ Fullscreen'}
                   </button>
                 )}
               </div>
-            )}
 
-            {/* Participant tiles — below the movie, inside the stage so they
-                stay visible in fullscreen. */}
-            <div className={isFullscreen ? 'shrink-0 p-2' : ''}>
-              <VideoChat roomId={roomId} identity={me.uid} name={me.name} avatars={avatars} />
+              <div className={isFs ? 'shrink-0 p-2' : ''}>
+                <VideoChat avatars={avatars} />
+              </div>
+            </div>
+          </div>
+
+          {/* Side column: roster + chat (hidden in fullscreen) */}
+          <div className="flex flex-col gap-4">
+            <RoomRoster members={members} hostUid={room.hostUid} />
+            <div className="h-96">
+              <RoomChat roomId={roomId} user={me} />
             </div>
           </div>
         </div>
-
-        {/* Side column: roster + chat (outside the stage → hidden in fullscreen) */}
-        <div className="flex flex-col gap-4">
-          <RoomRoster members={members} hostUid={room.hostUid} />
-          <div className="h-96">
-            <RoomChat roomId={roomId} user={me} />
-          </div>
-        </div>
-      </div>
+      </LiveProvider>
     </div>
   )
 }

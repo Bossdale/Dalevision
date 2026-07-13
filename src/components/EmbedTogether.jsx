@@ -56,7 +56,11 @@ export default function EmbedTogether({ selection, isHost, cue, bare = false, on
 
   return (
     <div>
-      <div className="relative overflow-hidden rounded-xl bg-black" style={{ aspectRatio: '16 / 9' }}>
+      <div
+        data-movie-frame
+        className="relative overflow-hidden rounded-xl bg-black"
+        style={{ aspectRatio: '16 / 9' }}
+      >
         <SandboxedFrame src={src} title="Watch together" />
         {remaining !== null && (
           <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-black/70">
