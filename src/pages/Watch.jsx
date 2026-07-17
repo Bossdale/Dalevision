@@ -5,7 +5,7 @@ import SandboxedFrame from '../components/SandboxedFrame'
 import { VIDEO_SOURCES, buildUrl } from '../lib/sources'
 import { getDetails, titleOf } from '../lib/tmdb'
 import { useAuth } from '../contexts/AuthContext'
-import { addToWatchHistory } from '../lib/watchHistory'
+import { addToWatchHistory, setSeriesProgress } from '../lib/watchHistory'
 
 const AUTO_TIMEOUT_MS = 7000 // per-server probe window while auto-selecting
 
@@ -73,6 +73,21 @@ export default function Watch() {
   const goNextEpisode = () => {
     if (nextEpisode) navigate(`/watch/tv/${id}/${nextEpisode.s}/${nextEpisode.e}`)
   }
+
+  // "Completed" heuristic: since the cross-origin embed can't report playback
+  // progress, treat an episode as watched once the viewer stays ~85% of its
+  // runtime. On completion, advance the saved series progress to the next
+  // episode so the Detail screen preselects it. Leaving early = no advance.
+  useEffect(() => {
+    if (type !== 'tv' || !currentUser || !data || !nextEpisode) return undefined
+    const runtimeMin = data.episode_run_time?.[0] || 30
+    const thresholdMs = Math.min(runtimeMin * 0.85, 45) * 60 * 1000
+    const timer = setTimeout(() => {
+      setSeriesProgress(currentUser.uid, id, { season: nextEpisode.s, episode: nextEpisode.e })
+    }, thresholdMs)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type, currentUser, data, id, season, episode, nextEpisode?.s, nextEpisode?.e])
 
   const isLast = sourceIdx >= VIDEO_SOURCES.length - 1
 

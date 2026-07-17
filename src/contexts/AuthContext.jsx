@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
-import { doc, onSnapshot } from 'firebase/firestore'
+import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { setRememberedUser } from '../lib/rememberedUser'
 
@@ -60,6 +60,25 @@ export function AuthProvider({ children }) {
       unsubAuth()
     }
   }, [])
+
+  // Heartbeat: record the last time this user was active so admins can see
+  // who's online. Writing only `lastActive` keeps role/status unchanged, which
+  // the Firestore rules require for self-updates.
+  useEffect(() => {
+    if (!currentUser) return undefined
+    const ping = () =>
+      updateDoc(doc(db, 'users', currentUser.uid), { lastActive: serverTimestamp() }).catch(
+        () => {},
+      )
+    ping()
+    const iv = setInterval(ping, 60000)
+    const onVisible = () => document.visibilityState === 'visible' && ping()
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(iv)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [currentUser])
 
   const logout = () => signOut(auth)
 

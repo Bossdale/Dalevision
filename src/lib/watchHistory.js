@@ -1,4 +1,4 @@
-import { doc, runTransaction } from 'firebase/firestore'
+import { doc, runTransaction, updateDoc } from 'firebase/firestore'
 import { db } from './firebase'
 
 const MAX_HISTORY = 20
@@ -43,6 +43,15 @@ export async function removeFromWatchHistory(uid, id, type) {
     )
     tx.update(ref, { watchHistory: next })
   })
+}
+
+// Remembers the NEXT season/episode to watch for a series (advanced after the
+// user finishes an episode). Read on the Detail page to preselect it.
+export async function setSeriesProgress(uid, seriesId, { season, episode }) {
+  if (!uid || !seriesId || !season) return
+  await updateDoc(doc(db, 'users', uid), {
+    [`seriesProgress.${seriesId}`]: { season, episode: episode || 1, at: Date.now() },
+  }).catch(() => {})
 }
 
 export async function clearWatchHistory(uid) {

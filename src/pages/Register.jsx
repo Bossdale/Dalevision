@@ -6,12 +6,15 @@ import { auth, db } from '../lib/firebase'
 import { DEFAULT_AVATAR } from '../lib/avatars'
 import { friendlyAuthError } from '../lib/authErrors'
 import AuthShell from '../components/AuthShell'
+import TermsModal from '../components/TermsModal'
 
 export default function Register() {
   const navigate = useNavigate()
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [agreed, setAgreed] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -20,6 +23,10 @@ export default function Register() {
     setError('')
     if (displayName.trim().length < 2) {
       setError('Please enter a display name.')
+      return
+    }
+    if (!agreed) {
+      setError('Please accept the Terms & Conditions to continue.')
       return
     }
     setBusy(true)
@@ -93,13 +100,34 @@ export default function Register() {
           minLength={6}
           required
         />
-        <button className="btn-primary w-full" disabled={busy}>
+        <label className="flex items-start gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            className="mt-0.5 h-4 w-4 accent-accent"
+          />
+          <span>
+            I agree to the{' '}
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="text-white underline hover:text-accent"
+            >
+              Terms &amp; Conditions
+            </button>
+          </span>
+        </label>
+
+        <button className="btn-primary w-full" disabled={busy || !agreed}>
           {busy ? 'Creating account…' : 'Sign up'}
         </button>
       </form>
       <p className="mt-4 text-xs text-gray-500">
         New accounts require admin approval before you can browse.
       </p>
+
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
     </AuthShell>
   )
 }

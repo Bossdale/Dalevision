@@ -9,6 +9,16 @@ import Avatar from '../components/Avatar'
 import Spinner from '../components/Spinner'
 
 const TABS = ['all', 'pending', 'approved', 'banned']
+const ACTIVE_WINDOW_MS = 2 * 60 * 1000 // "Active" if seen within 2 minutes
+
+// lastActive may be a Firestore Timestamp or a number — normalise to ms.
+function lastActiveMs(u) {
+  const v = u.lastActive
+  if (!v) return null
+  if (typeof v === 'number') return v
+  if (typeof v.toMillis === 'function') return v.toMillis()
+  return null
+}
 
 const statusBadge = {
   pending: 'bg-yellow-500/20 text-yellow-400',
@@ -181,13 +191,14 @@ export default function Admin() {
                   <th className="px-4 py-3">Email</th>
                   <th className="px-4 py-3">Role</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Active</th>
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                       No users in this view.
                     </td>
                   </tr>
@@ -213,6 +224,32 @@ export default function Admin() {
                         >
                           {u.status}
                         </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs">
+                        {(() => {
+                          const ms = lastActiveMs(u)
+                          if (!ms) return <span className="text-gray-400">—</span>
+                          if (Date.now() - ms < ACTIVE_WINDOW_MS) {
+                            return (
+                              <span className="inline-flex items-center gap-1 font-medium text-green-600">
+                                <span className="h-2 w-2 rounded-full bg-green-500" />
+                                Active
+                              </span>
+                            )
+                          }
+                          return (
+                            <span className="text-gray-600">
+                              {new Date(ms).toLocaleString([], {
+                                month: 'numeric',
+                                day: 'numeric',
+                                year: '2-digit',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true,
+                              })}
+                            </span>
+                          )
+                        })()}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">

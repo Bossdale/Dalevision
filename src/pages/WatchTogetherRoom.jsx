@@ -69,7 +69,15 @@ function Picker({ onPickEmbed }) {
   })
   const { data: recommended = [] } = useQuery({
     queryKey: ['wt-recommended'],
-    queryFn: () => getPopularMovies(),
+    // ~60 popular movies (3 TMDB pages) for a richer recommendation strip.
+    queryFn: async () => {
+      const pages = await Promise.all([
+        getPopularMovies(1),
+        getPopularMovies(2),
+        getPopularMovies(3),
+      ])
+      return pages.flat().filter((m) => m.poster_path)
+    },
     staleTime: 1000 * 60 * 30,
   })
 
@@ -101,9 +109,12 @@ function Picker({ onPickEmbed }) {
         </div>
       ) : (
         <>
-          <p className="mb-2 text-sm font-semibold text-gray-200">Recommended to watch</p>
-          <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-            {recommended.slice(0, 20).map((m) => (
+          <p className="mb-2 text-sm font-semibold text-gray-200">
+            Recommended to watch <span className="text-gray-500">· swipe →</span>
+          </p>
+          {/* 2 rows, horizontally swipeable — fixed-width poster columns */}
+          <div className="no-scrollbar grid grid-flow-col grid-rows-2 gap-3 overflow-x-auto pb-2 [grid-auto-columns:7rem] sm:[grid-auto-columns:9rem]">
+            {recommended.slice(0, 50).map((m) => (
               <PickTile key={m.id} item={{ ...m, media_type: 'movie' }} onPick={() => pick(m)} />
             ))}
           </div>
@@ -294,8 +305,8 @@ export default function WatchTogetherRoom() {
       </div>
 
       <LiveProvider roomId={roomId} identity={me.uid} name={me.name}>
-        <div className="grid gap-4 lg:grid-cols-[1fr_340px]">
-          <div className="space-y-3">
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <div className="min-w-0 space-y-3">
             {/* Stage = movie + video tiles; fullscreen shows only these. */}
             <div
               ref={stageRef}

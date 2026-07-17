@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { IMG, getDetails, pickTrailerKey, titleOf, yearOf } from '../lib/tmdb'
 import { newRoomId } from '../lib/rooms'
+import { useAuth } from '../contexts/AuthContext'
 import Spinner from '../components/Spinner'
 
 // Format TMDB runtime (minutes) as "2h 14m" / "45m".
@@ -16,10 +17,24 @@ function formatRuntime(min) {
 export default function Detail() {
   const { type, id } = useParams()
   const navigate = useNavigate()
+  const { userProfile } = useAuth()
   const isTv = type === 'tv'
   const [showTrailer, setShowTrailer] = useState(false)
   const [season, setSeason] = useState(1)
   const [episode, setEpisode] = useState(1)
+
+  // Preselect the next episode to watch from saved series progress (applied
+  // once per series so it doesn't override the user's manual dropdown changes).
+  const appliedProgress = useRef(null)
+  useEffect(() => {
+    if (!isTv || appliedProgress.current === id) return
+    const p = userProfile?.seriesProgress?.[id]
+    if (p && p.season) {
+      setSeason(p.season)
+      setEpisode(p.episode || 1)
+      appliedProgress.current = id
+    }
+  }, [userProfile, id, isTv])
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['details', type, id],
