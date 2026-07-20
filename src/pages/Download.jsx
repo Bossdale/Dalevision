@@ -1,16 +1,17 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import SandboxedFrame from '../components/SandboxedFrame'
 import { DOWNLOAD_SOURCES, buildUrl } from '../lib/sources'
 import { getDetails, titleOf } from '../lib/tmdb'
+import useSmartBack from '../hooks/useSmartBack'
 
 const AUTO_TIMEOUT_MS = 7000
 
 export default function Download() {
   const { type, id } = useParams()
   const [params] = useSearchParams()
-  const navigate = useNavigate()
+  const goBack = useSmartBack(`/detail/${type}/${id}`)
 
   const [sourceIdx, setSourceIdx] = useState(0)
   const [autoMode, setAutoMode] = useState(true)
@@ -52,7 +53,7 @@ export default function Download() {
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center gap-3 bg-black/90 px-3 py-2 text-white">
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="shrink-0 rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
         >
           ‹ Back

@@ -5,6 +5,7 @@ import SandboxedFrame from '../components/SandboxedFrame'
 import { VIDEO_SOURCES, buildUrl } from '../lib/sources'
 import { getDetails, titleOf } from '../lib/tmdb'
 import { useAuth } from '../contexts/AuthContext'
+import useSmartBack from '../hooks/useSmartBack'
 import { addToWatchHistory, setSeriesProgress } from '../lib/watchHistory'
 
 const AUTO_TIMEOUT_MS = 7000 // per-server probe window while auto-selecting
@@ -12,6 +13,9 @@ const AUTO_TIMEOUT_MS = 7000 // per-server probe window while auto-selecting
 export default function Watch() {
   const { type, id, season, episode } = useParams()
   const navigate = useNavigate()
+  // Return to wherever the user came from (Detail, Home hero, etc.); fall back
+  // to this title's Detail page for direct/deep links.
+  const goBack = useSmartBack(`/detail/${type}/${id}`)
   const { currentUser } = useAuth()
 
   const [sourceIdx, setSourceIdx] = useState(0)
@@ -104,12 +108,17 @@ export default function Watch() {
     setAutoMode(false)
     setSourceIdx(i)
   }
+  // Advance to the next server manually (from the error card). Stops auto mode
+  // so we don't fight the user's choice.
+  const tryNextServer = () => {
+    if (!isLast) selectServer(sourceIdx + 1)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-black">
       <div className="flex items-center gap-3 bg-black/90 px-3 py-2 text-white">
         <button
-          onClick={() => navigate(`/detail/${type}/${id}`)}
+          onClick={goBack}
           className="shrink-0 rounded bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
         >
           ‹ Back
@@ -178,8 +187,11 @@ export default function Watch() {
           src={src}
           title="Video player"
           timeoutMs={autoMode ? AUTO_TIMEOUT_MS : 8000}
+          serverLabel={`Server ${sourceIdx + 1}`}
+          autoProbing={autoMode}
           onLoaded={handleLoaded}
           onTimeout={handleTimeout}
+          onTryNext={isLast ? undefined : tryNextServer}
         />
       </div>
     </div>

@@ -30,22 +30,11 @@ export const VIDEO_SOURCES = [
     tv: (id, s, e) => `https://vidsrc.cc/v2/embed/tv/${id}/${s}/${e}`,
   },
   {
-    id: 'embedsu',
-    name: 'Embed.su',
-    movie: (id) => `https://embed.su/embed/movie/${id}`,
-    tv: (id, s, e) => `https://embed.su/embed/tv/${id}/${s}/${e}`,
-  },
-  {
-    id: 'autoembed',
-    name: 'AutoEmbed',
-    movie: (id) => `https://player.autoembed.cc/embed/movie/${id}`,
-    tv: (id, s, e) => `https://player.autoembed.cc/embed/tv/${id}/${s}/${e}`,
-  },
-  {
     id: 'moviesapi',
     name: 'MoviesAPI',
-    movie: (id) => `https://moviesapi.club/movie/${id}`,
-    tv: (id, s, e) => `https://moviesapi.club/tv/${id}-${s}-${e}`,
+    // Migrated from moviesapi.club (now dead / 403) to moviesapi.to.
+    movie: (id) => `https://moviesapi.to/movie/${id}`,
+    tv: (id, s, e) => `https://moviesapi.to/tv/${id}-${s}-${e}`,
   },
 ]
 

@@ -15,7 +15,15 @@ import {
   updatePlayback,
 } from '../lib/rooms'
 import { getLibraryItem } from '../lib/legalLibrary'
-import { IMG, getPopularMovies, searchMulti, titleOf, typeOf } from '../lib/tmdb'
+import {
+  IMG,
+  getPopularMovies,
+  getPopularSeries,
+  getTrending,
+  searchMulti,
+  titleOf,
+  typeOf,
+} from '../lib/tmdb'
 import useDebounce from '../hooks/useDebounce'
 import { VideoTrack } from '@livekit/components-react'
 import SyncPlayer from '../components/SyncPlayer'
@@ -69,14 +77,39 @@ function Picker({ onPickEmbed }) {
   })
   const { data: recommended = [] } = useQuery({
     queryKey: ['wt-recommended'],
-    // ~60 popular movies (3 TMDB pages) for a richer recommendation strip.
+    // A richer, mixed strip: trending + popular movies + popular series, so the
+    // host has a lot more to pick from than movies alone.
     queryFn: async () => {
-      const pages = await Promise.all([
+      const [trend, m1, m2, m3, s1, s2] = await Promise.all([
+        getTrending(1),
         getPopularMovies(1),
         getPopularMovies(2),
         getPopularMovies(3),
+        getPopularSeries(1),
+        getPopularSeries(2),
       ])
-      return pages.flat().filter((m) => m.poster_path)
+      // Tag each item with a media_type so typeOf()/keys work for movies & TV.
+      const withType = (arr, fallback) =>
+        arr.map((x) => ({ ...x, media_type: x.media_type || fallback }))
+      const all = [
+        ...withType(trend, 'movie'),
+        ...withType(m1, 'movie'),
+        ...withType(m2, 'movie'),
+        ...withType(m3, 'movie'),
+        ...withType(s1, 'tv'),
+        ...withType(s2, 'tv'),
+      ].filter((x) => x.poster_path)
+      // De-duplicate across sources (a trending title may also be popular).
+      const seen = new Set()
+      const unique = []
+      for (const x of all) {
+        const key = `${x.media_type}-${x.id}`
+        if (!seen.has(key)) {
+          seen.add(key)
+          unique.push(x)
+        }
+      }
+      return unique
     },
     staleTime: 1000 * 60 * 30,
   })
@@ -110,12 +143,12 @@ function Picker({ onPickEmbed }) {
       ) : (
         <>
           <p className="mb-2 text-sm font-semibold text-gray-200">
-            Recommended to watch <span className="text-gray-500">· swipe →</span>
+            Recommended to watch <span className="text-gray-500">· movies &amp; series · swipe →</span>
           </p>
           {/* 2 rows, horizontally swipeable — fixed-width poster columns */}
           <div className="no-scrollbar grid grid-flow-col grid-rows-2 gap-3 overflow-x-auto pb-2 [grid-auto-columns:7rem] sm:[grid-auto-columns:9rem]">
-            {recommended.slice(0, 50).map((m) => (
-              <PickTile key={m.id} item={{ ...m, media_type: 'movie' }} onPick={() => pick(m)} />
+            {recommended.slice(0, 100).map((m) => (
+              <PickTile key={`${m.media_type}-${m.id}`} item={m} onPick={() => pick(m)} />
             ))}
           </div>
         </>
@@ -126,9 +159,22 @@ function Picker({ onPickEmbed }) {
 
 // Shows the host's shared screen (live mirror) when someone is screen-sharing;
 // otherwise renders the normal player node. Must be inside <LiveProvider>.
-function MovieArea({ player }) {
+function MovieArea({ player, isFs }) {
   const live = useLive()
   if (live.configured && live.screen) {
+    // In fullscreen, fill the whole stage (absolute inset-0 escapes the width-
+    // capped wrapper and centers via object-contain), so the shared screen
+    // isn't letterboxed/offset inside a small aspect-video card.
+    if (isFs) {
+      return (
+        <div className="absolute inset-0 flex items-center justify-center bg-black">
+          <VideoTrack trackRef={live.screen} className="h-full w-full object-contain" />
+          <span className="absolute left-3 top-3 rounded bg-black/60 px-2 py-1 text-xs text-gray-200 backdrop-blur-sm">
+            🖥 Watching host’s shared screen
+          </span>
+        </div>
+      )
+    }
     return (
       <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black ring-1 ring-white/10">
         <VideoTrack trackRef={live.screen} className="h-full w-full object-contain" />
@@ -324,7 +370,7 @@ export default function WatchTogetherRoom() {
                 }
               >
                 <div className={isFs ? 'w-full max-w-[177vh]' : 'w-full'}>
-                  <MovieArea player={playerNode} />
+                  <MovieArea player={playerNode} isFs={isFs} />
                 </div>
 
                 {selection && (

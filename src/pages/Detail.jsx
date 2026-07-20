@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { IMG, getDetails, pickTrailerKey, titleOf, yearOf } from '../lib/tmdb'
 import { newRoomId } from '../lib/rooms'
 import { useAuth } from '../contexts/AuthContext'
+import useSmartBack from '../hooks/useSmartBack'
 import Spinner from '../components/Spinner'
 
 // Format TMDB runtime (minutes) as "2h 14m" / "45m".
@@ -17,6 +18,7 @@ function formatRuntime(min) {
 export default function Detail() {
   const { type, id } = useParams()
   const navigate = useNavigate()
+  const goBack = useSmartBack('/')
   const { userProfile } = useAuth()
   const isTv = type === 'tv'
   const [showTrailer, setShowTrailer] = useState(false)
@@ -80,7 +82,7 @@ export default function Detail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-base via-base/50 to-transparent" />
         <button
-          onClick={() => navigate('/')}
+          onClick={goBack}
           className="glass absolute left-4 top-4 rounded-full px-4 py-1.5 text-sm text-white transition hover:bg-white/20"
         >
           ‹ Back
@@ -183,9 +185,13 @@ export default function Detail() {
               <button onClick={goWatch} className="btn-primary">
                 ▶ Watch Now
               </button>
+              {/* Download temporarily hidden from the UI. Implementation
+                  (goDownload, /download route, DOWNLOAD_SOURCES) is kept — restore
+                  this button to re-enable.
               <button onClick={goDownload} className="btn-secondary">
                 ⭳ Download
               </button>
+              */}
               <button
                 onClick={() =>
                   navigate(
