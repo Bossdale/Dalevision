@@ -14,7 +14,9 @@ export default function Watch() {
   const { type, id, season, episode } = useParams()
   const navigate = useNavigate()
   // Return to wherever the user came from (Detail, Home hero, etc.); fall back
-  // to this title's Detail page for direct/deep links.
+  // to this title's Detail page for direct/deep links. Works for movies AND
+  // series because "Next Episode" REPLACES the history entry (see goNextEpisode)
+  // instead of pushing, so back never steps through prior episodes.
   const goBack = useSmartBack(`/detail/${type}/${id}`)
   const { currentUser } = useAuth()
 
@@ -75,7 +77,10 @@ export default function Watch() {
           ? { s: curSeason + 1, e: 1 }
           : null
   const goNextEpisode = () => {
-    if (nextEpisode) navigate(`/watch/tv/${id}/${nextEpisode.s}/${nextEpisode.e}`)
+    // Replace (not push) so episodes don't stack in history — keeps a single
+    // /watch entry, so Back returns to Detail rather than the previous episode.
+    if (nextEpisode)
+      navigate(`/watch/tv/${id}/${nextEpisode.s}/${nextEpisode.e}`, { replace: true })
   }
 
   // "Completed" heuristic: since the cross-origin embed can't report playback

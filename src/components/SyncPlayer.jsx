@@ -4,7 +4,7 @@ import Hls from 'hls.js'
 // Own-player used by Watch Together. The HOST's native controls drive playback
 // and emit events; GUESTS have locked controls and follow the room's playback
 // state. This works because it's a same-origin <video> (unlike the embeds).
-export default function SyncPlayer({ streamUrl, kind, isHost, playback, onHostEvent, volume = 1 }) {
+export default function SyncPlayer({ streamUrl, kind, isHost, playback, onHostEvent, volume = 1, bare = false }) {
   const videoRef = useRef(null)
   const [needGesture, setNeedGesture] = useState(false)
 
@@ -81,12 +81,16 @@ export default function SyncPlayer({ streamUrl, kind, isHost, playback, onHostEv
   }
 
   return (
-    <div className="relative w-full">
+    <div className={bare ? 'relative flex h-full w-full items-center justify-center' : 'relative w-full'}>
       <video
         ref={videoRef}
         controls={isHost}
         playsInline
-        className="aspect-video w-full rounded-xl bg-black shadow-card ring-1 ring-white/10"
+        className={
+          bare
+            ? 'aspect-video h-full max-h-full w-auto max-w-full bg-black'
+            : 'aspect-video w-full rounded-xl bg-black shadow-card ring-1 ring-white/10'
+        }
       />
       {!isHost && (
         <span className="pointer-events-none absolute left-3 top-3 rounded bg-black/60 px-2 py-1 text-xs text-gray-200 backdrop-blur-sm">

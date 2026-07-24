@@ -180,3 +180,17 @@
     text-shadow: 0 2px 18px rgba(0, 0, 0, 0.7);
   }
 }
+
+/* --- Watch Together video-call tiles ---
+   Always show the WHOLE camera frame inside the fixed tile — never crop. A
+   portrait phone feed scales to the tile's full HEIGHT (width ends up narrower,
+   black bars on the sides); a landscape webcam fits to width. This is applied
+   to ALL camera feeds and NOT gated on LiveKit's `data-lk-orientation` flag,
+   which is unreliable on mobile (phones often deliver a landscape-tagged track
+   even when held vertically). `!important` guarantees it wins over LiveKit's
+   default object-fit rules regardless of CSS load order. Screen shares are
+   unaffected (different data-lk-source). */
+.lk-participant-media-video[data-lk-source='camera'] {
+  object-fit: contain !important;
+  background-color: #000;
+}

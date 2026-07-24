@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import SandboxedFrame from './SandboxedFrame'
+import { useLive } from './LiveProvider'
 import { VIDEO_SOURCES, buildUrl } from '../lib/sources'
 import { getDetails, titleOf } from '../lib/tmdb'
 
@@ -54,12 +55,30 @@ export default function EmbedTogether({ selection, isHost, cue, bare = false, on
 
   const update = (patch) => onSelect({ ...selection, ...patch })
 
+  // In bare/fullscreen the frame FILLS the movie area (full screen width, edge
+  // to edge, centered). The blue crop box therefore spans the full width; the
+  // 16:9 movie is centered inside it (letterbox bars). On entering fullscreen,
+  // re-bind the crop so the box snaps to this full-width frame.
+  const live = useLive()
+  useEffect(() => {
+    if (!bare || !live?.recrop) return undefined
+    const id = setTimeout(() => live.recrop(), 300)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bare])
+
   return (
-    <div>
+    <div className={bare ? 'h-full w-full' : ''}>
+      {/* Bare/fullscreen: fill the area edge-to-edge (full screen width).
+          Non-bare: normal responsive 16:9 card. Region-Capture crop target. */}
       <div
         data-movie-frame
-        className="relative overflow-hidden rounded-xl bg-black"
-        style={{ aspectRatio: '16 / 9' }}
+        className={
+          bare
+            ? 'relative h-full w-full overflow-hidden bg-black'
+            : 'relative w-full overflow-hidden rounded-xl bg-black'
+        }
+        style={bare ? undefined : { aspectRatio: '16 / 9' }}
       >
         <SandboxedFrame src={src} title="Watch together" />
         {remaining !== null && (

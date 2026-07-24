@@ -4,11 +4,14 @@ import { useEffect, useRef, useState } from 'react'
 // calls onFinish. Skippable, with a safety timeout in case the video stalls.
 export default function Splash({
   onFinish,
-  src = '/DaleVision_logo_animation.mp4',
-  maxMs = 9000,
+  src = '/intro.mp4',
+  // Safety net if the video stalls/blocks. Must exceed the intro's real length
+  // (~10s) so a normally-playing intro isn't cut short before "ended" fires.
+  maxMs = 12000,
 }) {
   const [fading, setFading] = useState(false)
   const done = useRef(false)
+  const videoRef = useRef(null)
 
   const finish = () => {
     if (done.current) return
@@ -19,6 +22,16 @@ export default function Splash({
   }
 
   useEffect(() => {
+    // Play WITH sound. Browsers block unmuted autoplay without a prior user
+    // gesture, so if that's rejected we retry muted so the intro still plays.
+    const v = videoRef.current
+    if (v) {
+      v.muted = false
+      v.play().catch(() => {
+        v.muted = true
+        v.play().catch(finish)
+      })
+    }
     // Fallback: if the video never fires "ended" (blocked/stalled), finish anyway.
     const t = setTimeout(finish, maxMs)
     return () => clearTimeout(t)
@@ -32,9 +45,8 @@ export default function Splash({
       }`}
     >
       <video
+        ref={videoRef}
         src={src}
-        autoPlay
-        muted
         playsInline
         onEnded={finish}
         onError={finish}

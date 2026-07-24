@@ -43,7 +43,12 @@ function Provide({ children, callVolume, setCallVolume }) {
     } catch {
       /* ignore */
     }
-    shareRef.current = { video: null, audio: null }
+    try {
+      s.ro?.disconnect()
+    } catch {
+      /* ignore */
+    }
+    shareRef.current = { video: null, audio: null, ro: null }
     setSharing(false)
   }
 
@@ -72,20 +77,40 @@ function Provide({ children, callVolume, setCallVolume }) {
     // iframes, so it can't be used here.) The video-call tiles are kept below
     // the movie while sharing, so they fall OUTSIDE this crop rectangle.
     const el = document.querySelector('[data-movie-frame]')
+    let ro = null
     if (el && window.CropTarget && typeof videoTrack.cropTo === 'function') {
-      try {
-        const target = await window.CropTarget.fromElement(el)
-        await videoTrack.cropTo(target)
-      } catch {
-        /* region capture unsupported — falls back to full tab */
+      const applyCrop = async () => {
+        try {
+          const target = await window.CropTarget.fromElement(el)
+          try {
+            await videoTrack.cropTo(null)
+          } catch {
+            /* ignore */
+          }
+          await videoTrack.cropTo(target)
+        } catch {
+          /* region capture unsupported / transient — falls back to full tab */
+        }
       }
+      await applyCrop()
+      // Re-apply the crop whenever the movie frame resizes — most importantly
+      // when entering/exiting fullscreen — so the crop region (and the browser's
+      // blue crop indicator) tracks the frame's new, centered geometry instead
+      // of staying at the position captured when sharing began. Debounced so a
+      // resize animation doesn't spam cropTo.
+      let t
+      ro = new ResizeObserver(() => {
+        clearTimeout(t)
+        t = setTimeout(applyCrop, 150)
+      })
+      ro.observe(el)
     }
 
     await localParticipant.publishTrack(videoTrack, { source: Track.Source.ScreenShare })
     if (audioTrack) {
       await localParticipant.publishTrack(audioTrack, { source: Track.Source.ScreenShareAudio })
     }
-    shareRef.current = { video: videoTrack, audio: audioTrack }
+    shareRef.current = { video: videoTrack, audio: audioTrack, ro }
     setSharing(true)
     // If the user stops sharing via the browser's own control:
     videoTrack.addEventListener('ended', stopShare)
@@ -93,12 +118,39 @@ function Provide({ children, callVolume, setCallVolume }) {
 
   const toggleShare = () => (sharing ? stopShare() : startShare().catch(() => setSharing(false)))
 
+  // Explicitly (re)bind the Region-Capture crop to the CURRENT movie-frame
+  // element. Called when the frame is resized/repositioned (e.g. entering
+  // fullscreen) so the crop — and the browser's blue crop box — snaps to the
+  // frame's new geometry instead of staying at the position captured at share
+  // time. Re-queries the element fresh so it works even if it was remounted.
+  const recrop = async () => {
+    const v = shareRef.current.video
+    if (!v || typeof v.cropTo !== 'function' || !window.CropTarget) return
+    const el = document.querySelector('[data-movie-frame]')
+    if (!el) return
+    try {
+      const target = await window.CropTarget.fromElement(el)
+      // Reset the crop first (cropTo(null)) then re-apply — re-calling cropTo
+      // with the same track often does NOT redraw the crop region/indicator, so
+      // we clear it and set it fresh to force it to the frame's current bounds.
+      try {
+        await v.cropTo(null)
+      } catch {
+        /* ignore */
+      }
+      await v.cropTo(target)
+    } catch {
+      /* unsupported / transient */
+    }
+  }
+
   const value = {
     configured: true,
     screen,
     camTracks,
     isLocalSharing: sharing,
     toggleShare,
+    recrop,
     callVolume,
     setCallVolume,
   }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ParticipantTile, TrackToggle } from '@livekit/components-react'
+import { TrackToggle, VideoTrack } from '@livekit/components-react'
 import { Track } from 'livekit-client'
 import '@livekit/components-styles'
 import { useLive } from './LiveProvider'
@@ -49,7 +49,22 @@ export default function VideoChat({ avatars }) {
                     </span>
                   </div>
                 ) : (
-                  <ParticipantTile trackRef={t} />
+                  <>
+                    {/* Direct video render (not ParticipantTile) so WE control
+                        sizing: fill the fixed tile and object-contain so the
+                        WHOLE frame shows — a portrait phone fits to the tile
+                        height (black side bars), never cropped. */}
+                    <VideoTrack
+                      trackRef={t}
+                      className="h-full w-full bg-black"
+                      // Mirror ALL camera tiles (local + remote), so every
+                      // participant is shown flipped to everyone.
+                      style={{ objectFit: 'contain', transform: 'scaleX(-1)' }}
+                    />
+                    <span className="pointer-events-none absolute bottom-1 left-1 max-w-[90%] truncate rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">
+                      {p.name || 'Guest'}
+                    </span>
+                  </>
                 )}
               </div>
             )

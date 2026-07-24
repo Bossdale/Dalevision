@@ -321,6 +321,7 @@ export default function WatchTogetherRoom() {
         isHost={isHost}
         playback={room.playback}
         onHostEvent={onHostEvent}
+        bare={isFs}
       />
     )
   ) : isHost ? (
@@ -369,14 +370,23 @@ export default function WatchTogetherRoom() {
                     : 'relative'
                 }
               >
-                <div className={isFs ? 'w-full max-w-[177vh]' : 'w-full'}>
+                {/* In fullscreen the movie fills this area edge-to-edge (full
+                    device width, no side margin). */}
+                <div className={isFs ? 'h-full w-full' : 'w-full'}>
                   <MovieArea player={playerNode} isFs={isFs} />
                 </div>
 
                 {selection && (
                   <button
                     onClick={toggleFullscreen}
-                    className="absolute right-3 top-3 z-50 rounded bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/80"
+                    title={isFs ? 'Exit fullscreen' : 'Fullscreen'}
+                    aria-label={isFs ? 'Exit fullscreen' : 'Fullscreen'}
+                    className={
+                      isFs
+                        ? // Compact but keeps the "Exit" label; floats over the movie.
+                          'absolute right-2 top-2 z-50 rounded bg-black/40 px-2.5 py-1 text-xs text-white/80 backdrop-blur transition hover:bg-black/70 hover:text-white'
+                        : 'absolute right-3 top-3 z-50 rounded bg-black/60 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/80'
+                    }
                   >
                     {isFs ? 'Exit ⤢' : '⛶ Fullscreen'}
                   </button>
